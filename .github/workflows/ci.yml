@@ -22,13 +22,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: taiki-e/install-action@v2
-        with: { tool: just }
+        with: { tool: "just,cargo-semver-checks" }
       - uses: actions/checkout@v4
-      - name: Build
-        run: cargo build --verbose
       - uses: Swatinem/rust-cache@v2
         if: github.event_name != 'release' && github.event_name != 'workflow_dispatch'
+      - name: Build
+        run: cargo build --verbose
       - run: just ci-test
+      - name: Check if changes break public API and require a new version
+        run: just semver-checks
 
   msrv:
     name: Test MSRV
@@ -39,7 +41,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
         if: github.event_name != 'release' && github.event_name != 'workflow_dispatch'
-      - name: Read crate metadata
+      - name: Read rust-version from Cargo.toml
         id: metadata
         run: echo "rust-version=$(sed -ne 's/rust-version *= *\"\(.*\)\"/\1/p' Cargo.toml)" >> $GITHUB_OUTPUT
       - name: Install Rust
