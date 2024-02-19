@@ -3,9 +3,8 @@
 use alloc::{Allocator, SliceWrapper};
 use core::marker::PhantomData;
 use core::mem;
-use std;
 // in-place thread create
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 use std::thread::JoinHandle;
 
 use crate::enc::backward_references::UnionHasher;
@@ -62,10 +61,10 @@ fn spawn_work<
     extra_input: ExtraInput,
     index: usize,
     num_threads: usize,
-    locked_input: std::sync::Arc<RwLock<U>>,
+    locked_input: Arc<RwLock<U>>,
     alloc: Alloc,
     f: F,
-) -> std::thread::JoinHandle<ReturnValue>
+) -> JoinHandle<ReturnValue>
 where
     <Alloc as Allocator<u8>>::AllocatedMemory: Send + 'static,
 {
@@ -89,9 +88,9 @@ where
     <Alloc as Allocator<u8>>::AllocatedMemory: Send + 'static,
 {
     type JoinHandle = MultiThreadedJoinable<ReturnValue, BrotliEncoderThreadError>;
-    type FinalJoinHandle = std::sync::Arc<RwLock<U>>;
+    type FinalJoinHandle = Arc<RwLock<U>>;
     fn make_spawner(&mut self, input: &mut Owned<U>) -> Self::FinalJoinHandle {
-        std::sync::Arc::<RwLock<U>>::new(RwLock::new(
+        Arc::<RwLock<U>>::new(RwLock::new(
             mem::replace(input, Owned(InternalOwned::Borrowed)).unwrap(),
         ))
     }

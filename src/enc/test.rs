@@ -1,15 +1,5 @@
 #![cfg(test)]
 
-extern crate alloc_no_stdlib;
-extern crate brotli_decompressor;
-extern "C" {
-    fn calloc(n_elem: usize, el_size: usize) -> *mut u8;
-}
-extern "C" {
-    fn free(ptr: *mut u8);
-}
-
-// FIXME: Remove this after https://github.com/dropbox/rust-alloc-no-stdlib/issues/19 is fixed
 use alloc::{
     declare_stack_allocator_struct, define_allocator_memory_pool, define_stack_allocator_traits,
     static_array,
@@ -33,6 +23,13 @@ use super::histogram::{ContextType, HistogramCommand, HistogramDistance, Histogr
 use super::pdf::PDF;
 use super::{interface, s16, v8, StaticCommand, ZopfliNode};
 use crate::enc::encode::BrotliEncoderStateStruct;
+
+extern "C" {
+    fn calloc(n_elem: usize, el_size: usize) -> *mut u8;
+}
+extern "C" {
+    fn free(ptr: *mut u8);
+}
 
 declare_stack_allocator_struct!(MemPool, 128, stack);
 declare_stack_allocator_struct!(CallocatedFreelist4096, 128, calloc);

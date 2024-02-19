@@ -20,6 +20,7 @@ use core::ops;
 use std::env;
 use std::fs::File;
 use std::io::{self, Error, ErrorKind, Read, Seek, SeekFrom, Write};
+use std::path::Path;
 
 use alloc_no_stdlib::{Allocator, SliceWrapper, SliceWrapperMut};
 use brotli::enc::backward_references::BrotliEncoderMode;
@@ -67,13 +68,13 @@ impl<T> ops::IndexMut<usize> for Rebox<T> {
     }
 }
 
-impl<T> alloc_no_stdlib::SliceWrapper<T> for Rebox<T> {
+impl<T> SliceWrapper<T> for Rebox<T> {
     fn slice(&self) -> &[T] {
         &self.b
     }
 }
 
-impl<T> alloc_no_stdlib::SliceWrapperMut<T> for Rebox<T> {
+impl<T> SliceWrapperMut<T> for Rebox<T> {
     fn slice_mut(&mut self) -> &mut [T] {
         &mut self.b
     }
@@ -81,7 +82,7 @@ impl<T> alloc_no_stdlib::SliceWrapperMut<T> for Rebox<T> {
 #[derive(Clone, Copy, Default)]
 pub struct HeapAllocator {}
 
-impl<T: core::clone::Clone + Default> alloc_no_stdlib::Allocator<T> for HeapAllocator {
+impl<T: Clone + Default> Allocator<T> for HeapAllocator {
     type AllocatedMemory = Rebox<T>;
     fn alloc_cell(self: &mut HeapAllocator, len: usize) -> Rebox<T> {
         let v: Vec<T> = vec![T::default(); len];
@@ -119,8 +120,6 @@ macro_rules! println_stderr(
         writeln!(&mut ::std::io::stderr(), $($val)*).unwrap();
     } }
 );
-
-use std::path::Path;
 
 // declare_stack_allocator_struct!(MemPool, 4096, global);
 
@@ -959,9 +958,9 @@ fn main() {
                     }
                 } else {
                     match decompress(&mut input, &mut io::stdout(), buffer_size, custom_dictionary.into()) {
-            Ok(_) => {}
-            Err(e) => panic!("Error: {:} during brotli decompress\nTo compress with Brotli, specify the -c flag.", e),
-          }
+                        Ok(_) => {}
+                        Err(e) => panic!("Error: {:} during brotli decompress\nTo compress with Brotli, specify the -c flag.", e),
+                    }
                 }
             }
             drop(input);
@@ -1007,16 +1006,16 @@ fn main() {
                 }
             } else {
                 match decompress(&mut io::stdin(), &mut io::stdout(), buffer_size, custom_dictionary.into()) {
-          Ok(_) => return,
-          Err(e) => panic!("Error: {:} during brotli decompress\nTo compress with Brotli, specify the -c flag.", e),
-        }
+                    Ok(_) => return,
+                    Err(e) => panic!("Error: {:} during brotli decompress\nTo compress with Brotli, specify the -c flag.", e),
+                }
             }
         }
     } else {
         assert_eq!(num_benchmarks, 1);
         match decompress(&mut io::stdin(), &mut io::stdout(), buffer_size, custom_dictionary.into()) {
-      Ok(_) => (),
-      Err(e) => panic!("Error: {:} during brotli decompress\nTo compress with Brotli, specify the -c flag.", e),
-    }
+            Ok(_) => (),
+            Err(e) => panic!("Error: {:} during brotli decompress\nTo compress with Brotli, specify the -c flag.", e),
+        }
     }
 }

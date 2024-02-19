@@ -493,10 +493,10 @@ where
         let (alloc, _extra) = alloc_per_thread[num_threads - 1].replace_with_default();
         compression_last_thread_result = spawner_and_input.view(move |input_and_params:&(SliceW, BrotliEncoderParams)| -> CompressionThreadResult<Alloc> {
         compress_part(hasher,
-                      num_threads - 1,
-                      num_threads,
-                      input_and_params,
-                      alloc,
+          num_threads - 1,
+          num_threads,
+          input_and_params,
+          alloc,
         )
       });
     } else {
@@ -514,10 +514,10 @@ where
         let (alloc, _extra) = alloc_per_thread[num_threads - 1].replace_with_default();
         compression_last_thread_result = spawner_and_input.view(move |input_and_params:&(SliceW, BrotliEncoderParams)| -> CompressionThreadResult<Alloc> {
         compress_part(UnionHasher::Uninit,
-                      num_threads - 1,
-                      num_threads,
-                      input_and_params,
-                      alloc,
+          num_threads - 1,
+          num_threads,
+          input_and_params,
+          alloc,
         )
       });
     }

@@ -15,7 +15,7 @@ use brotli_decompressor::ffi::{
 };
 
 use super::alloc_util::BrotliSubclassableAllocator;
-use crate::enc::encode::BrotliEncoderStateStruct;
+use crate::enc::encode::{BrotliEncoderParameter, BrotliEncoderStateStruct};
 
 #[repr(C)]
 pub enum BrotliEncoderOperation {
@@ -110,7 +110,7 @@ pub unsafe extern "C" fn BrotliEncoderCreateInstance(
 #[no_mangle]
 pub unsafe extern "C" fn BrotliEncoderSetParameter(
     state_ptr: *mut BrotliEncoderState,
-    param: ::enc::encode::BrotliEncoderParameter,
+    param: BrotliEncoderParameter,
     value: u32,
 ) -> i32 {
     if (*state_ptr).compressor.set_parameter(param, value) {
@@ -179,11 +179,11 @@ pub unsafe extern "C" fn BrotliEncoderTakeOutput(
 }
 #[no_mangle]
 pub extern "C" fn BrotliEncoderVersion() -> u32 {
-    ::enc::encode::BrotliEncoderVersion()
+    crate::enc::encode::BrotliEncoderVersion()
 }
 #[no_mangle]
 pub extern "C" fn BrotliEncoderMaxCompressedSize(input_size: usize) -> usize {
-    ::enc::encode::BrotliEncoderMaxCompressedSize(input_size)
+    crate::enc::encode::BrotliEncoderMaxCompressedSize(input_size)
 }
 #[no_mangle]
 pub unsafe extern "C" fn BrotliEncoderCompress(
@@ -205,25 +205,25 @@ pub unsafe extern "C" fn BrotliEncoderCompress(
         };
         let translated_mode = match mode {
             BrotliEncoderMode::BROTLI_MODE_GENERIC => {
-                ::enc::backward_references::BrotliEncoderMode::BROTLI_MODE_GENERIC
+                crate::enc::backward_references::BrotliEncoderMode::BROTLI_MODE_GENERIC
             }
             BrotliEncoderMode::BROTLI_MODE_TEXT => {
-                ::enc::backward_references::BrotliEncoderMode::BROTLI_MODE_TEXT
+                crate::enc::backward_references::BrotliEncoderMode::BROTLI_MODE_TEXT
             }
             BrotliEncoderMode::BROTLI_MODE_FONT => {
-                ::enc::backward_references::BrotliEncoderMode::BROTLI_MODE_FONT
+                crate::enc::backward_references::BrotliEncoderMode::BROTLI_MODE_FONT
             }
             BrotliEncoderMode::BROTLI_MODE_FORCE_LSB_PRIOR => {
-                ::enc::backward_references::BrotliEncoderMode::BROTLI_FORCE_LSB_PRIOR
+                crate::enc::backward_references::BrotliEncoderMode::BROTLI_FORCE_LSB_PRIOR
             }
             BrotliEncoderMode::BROTLI_MODE_FORCE_MSB_PRIOR => {
-                ::enc::backward_references::BrotliEncoderMode::BROTLI_FORCE_MSB_PRIOR
+                crate::enc::backward_references::BrotliEncoderMode::BROTLI_FORCE_MSB_PRIOR
             }
             BrotliEncoderMode::BROTLI_MODE_FORCE_UTF8_PRIOR => {
-                ::enc::backward_references::BrotliEncoderMode::BROTLI_FORCE_UTF8_PRIOR
+                crate::enc::backward_references::BrotliEncoderMode::BROTLI_FORCE_UTF8_PRIOR
             }
             BrotliEncoderMode::BROTLI_MODE_FORCE_SIGNED_PRIOR => {
-                ::enc::backward_references::BrotliEncoderMode::BROTLI_FORCE_SIGNED_PRIOR
+                crate::enc::backward_references::BrotliEncoderMode::BROTLI_FORCE_SIGNED_PRIOR
             }
         };
         let mut m8 =
@@ -287,16 +287,16 @@ pub unsafe extern "C" fn BrotliEncoderCompressStream(
         let result;
         let translated_op = match op {
             BrotliEncoderOperation::BROTLI_OPERATION_PROCESS => {
-                ::enc::encode::BrotliEncoderOperation::BROTLI_OPERATION_PROCESS
+                crate::enc::encode::BrotliEncoderOperation::BROTLI_OPERATION_PROCESS
             }
             BrotliEncoderOperation::BROTLI_OPERATION_FLUSH => {
-                ::enc::encode::BrotliEncoderOperation::BROTLI_OPERATION_FLUSH
+                crate::enc::encode::BrotliEncoderOperation::BROTLI_OPERATION_FLUSH
             }
             BrotliEncoderOperation::BROTLI_OPERATION_FINISH => {
-                ::enc::encode::BrotliEncoderOperation::BROTLI_OPERATION_FINISH
+                crate::enc::encode::BrotliEncoderOperation::BROTLI_OPERATION_FINISH
             }
             BrotliEncoderOperation::BROTLI_OPERATION_EMIT_METADATA => {
-                ::enc::encode::BrotliEncoderOperation::BROTLI_OPERATION_EMIT_METADATA
+                crate::enc::encode::BrotliEncoderOperation::BROTLI_OPERATION_EMIT_METADATA
             }
         };
         {

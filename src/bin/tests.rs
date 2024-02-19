@@ -1,7 +1,5 @@
 #![cfg(test)]
 
-extern crate core;
-
 use core::cmp::min;
 use std::io;
 

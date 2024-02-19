@@ -1,3 +1,4 @@
+pub use alloc::{AllocatedStackMemory, SliceWrapper, StackAllocator};
 use alloc::{Allocator, SliceWrapperMut};
 #[cfg(feature = "std")]
 use std::io;

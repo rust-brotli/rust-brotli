@@ -1,10 +1,10 @@
+use alloc::{Allocator, SliceWrapper, SliceWrapperMut};
 use core;
 
-use super::super::alloc;
-use super::super::alloc::{Allocator, SliceWrapper, SliceWrapperMut};
 use super::backward_references::BrotliEncoderParams;
 use super::input_pair::{InputPair, InputReference, InputReferenceMut};
 use super::interface;
+use super::interface::LiteralPredictionModeNibble;
 use super::ir_interpret::{push_base, IRInterpreter};
 use super::prior_eval::DEFAULT_SPEED;
 use super::util::{floatX, FastLog2u16};
@@ -294,7 +294,7 @@ impl<'a, Alloc: alloc::Allocator<u16> + alloc::Allocator<u32> + alloc::Allocator
     fn literal_context_map(&self) -> &[u8] {
         self.context_map.literal_context_map.slice()
     }
-    fn prediction_mode(&self) -> crate::interface::LiteralPredictionModeNibble {
+    fn prediction_mode(&self) -> LiteralPredictionModeNibble {
         self.context_map.literal_prediction_mode()
     }
     fn update_cost(

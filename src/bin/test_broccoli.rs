@@ -2,9 +2,6 @@
 #![allow(non_upper_case_globals)]
 #![allow(dead_code)]
 
-extern crate brotli_decompressor;
-extern crate core;
-
 use core::cmp::{max, min};
 
 use brotli_decompressor::{CustomRead, CustomWrite};

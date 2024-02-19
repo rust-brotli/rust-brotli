@@ -1,4 +1,3 @@
-extern crate brotli;
 #[cfg(not(feature = "std"))]
 fn main() {
     panic!("For no-stdlib examples please see the tests")

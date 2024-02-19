@@ -10,7 +10,6 @@ use super::super::dictionary::{
     kBrotliDictionary, kBrotliDictionaryOffsetsByLength, kBrotliDictionarySizeBitsByLength,
 };
 use super::super::transform::TransformDictionaryWord;
-use super::super::{alloc, core};
 use super::block_split::BlockSplit;
 use super::combined_alloc::BrotliAlloc;
 use super::command::{Command, GetCopyLengthCode, GetInsertLengthCode};
@@ -33,9 +32,9 @@ use super::input_pair::{InputPair, InputReference, InputReferenceMut};
 use super::interface::StaticCommand;
 use super::static_dict::kNumDistanceCacheEntries;
 use super::util::floatX;
-use super::{find_stride, interface, prior_eval, stride_eval};
-use crate::enc::backward_references::BrotliEncoderParams;
+use super::{find_stride, interface, prior_eval, stride_eval, BrotliEncoderParams};
 use crate::enc::combined_alloc::{alloc_default, alloc_or_default, allocate};
+use crate::interface::LiteralPredictionModeNibble;
 use crate::VERSION;
 
 pub struct PrefixCodeRange {
@@ -177,7 +176,7 @@ impl<'a, Alloc: BrotliAlloc> interface::CommandProcessor<'a> for CommandQueue<'a
 
 #[cfg(feature = "std")]
 fn warn_on_missing_free() {
-    let _err = ::std::io::stderr()
+    let _err = std::io::stderr()
         .write(b"Need to free entropy_tally_scratch before dropping CommandQueue\n");
 }
 #[cfg(not(feature = "std"))]
@@ -492,7 +491,7 @@ fn LogMetaBlock<'a, Alloc: BrotliAlloc, Cb>(
         params.literal_adaptation[1],
     ]);
 
-    prediction_mode.set_literal_prediction_mode(interface::LiteralPredictionModeNibble(
+    prediction_mode.set_literal_prediction_mode(LiteralPredictionModeNibble(
         context_type.unwrap_or(ContextType::CONTEXT_LSB6) as u8,
     ));
     let mut entropy_tally_scratch;

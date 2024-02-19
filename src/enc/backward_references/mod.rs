@@ -3,9 +3,10 @@ pub mod hash_to_binary_tree;
 pub mod hq;
 mod test;
 
+use alloc::{Allocator, SliceWrapper, SliceWrapperMut};
+use core;
 use core::cmp::{max, min};
 
-use super::super::alloc::{Allocator, SliceWrapper, SliceWrapperMut};
 use super::command::{BrotliDistanceParams, Command, ComputeDistanceCode};
 use super::dictionary_hash::kStaticDictionaryHash;
 use super::hash_to_binary_tree::{H10Buckets, H10DefaultParams, ZopfliNode, H10};

@@ -8,6 +8,7 @@ use core::cmp::min;
 // pretty much assume compress_fragment_two_pass is a trap! except for store_meta_block_header
 use super::super::alloc;
 use super::backward_references::kHashMul32;
+//use alloc::{SliceWrapper, SliceWrapperMut};
 use super::brotli_bit_stream::{BrotliBuildAndStoreHuffmanTreeFast, BrotliStoreHuffmanTree};
 use super::compress_fragment_two_pass::{memcpy, BrotliWriteBits};
 use super::entropy_encode::{

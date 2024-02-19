@@ -1,8 +1,7 @@
+use alloc::{SliceWrapper, SliceWrapperMut};
 use core;
 use core::cmp::min;
 
-use super::super::alloc;
-use super::super::alloc::{SliceWrapper, SliceWrapperMut};
 use super::block_split::BlockSplit;
 use super::command::Command;
 use super::constants::{kSigned3BitContextLookup, kUTF8ContextLookup};
