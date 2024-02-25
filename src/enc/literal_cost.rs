@@ -9,18 +9,18 @@ fn UTF8Position(last: usize, c: usize, clamp: usize) -> usize {
     if c < 128usize {
         0usize
     } else if c >= 192usize {
-        min(1usize, clamp)
+        min(1, clamp)
     } else if last < 0xe0usize {
         0usize
     } else {
-        min(2usize, clamp)
+        min(2, clamp)
     }
 }
 
 fn DecideMultiByteStatsLevel(pos: usize, len: usize, mask: usize, data: &[u8]) -> usize {
     let mut counts = [0usize; 3];
-    let mut max_utf8: usize = 1;
-    let mut last_c: usize = 0usize;
+    let mut max_utf8 = 1usize;
+    let mut last_c = 0usize;
     let mut i: usize;
     i = 0usize;
     while i < len {
@@ -28,7 +28,7 @@ fn DecideMultiByteStatsLevel(pos: usize, len: usize, mask: usize, data: &[u8]) -
             let c: usize = data[(pos.wrapping_add(i) & mask)] as usize;
             {
                 let _rhs = 1;
-                let _lhs = &mut counts[UTF8Position(last_c, c, 2usize)];
+                let _lhs = &mut counts[UTF8Position(last_c, c, 2)];
                 *_lhs = (*_lhs).wrapping_add(_rhs as usize);
             }
             last_c = c;

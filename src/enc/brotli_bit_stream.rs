@@ -880,14 +880,14 @@ pub fn BrotliStoreHuffmanTree(
     }
     BrotliCreateHuffmanTree(
         &mut huffman_tree_histogram,
-        18usize,
-        5i32,
+        18,
+        5,
         tree,
         &mut code_length_bitdepth,
     );
     BrotliConvertBitDepthsToSymbols(
         &mut code_length_bitdepth,
-        18usize,
+        18,
         &mut code_length_bitdepth_symbols,
     );
     BrotliStoreHuffmanTreeOfHuffmanTreeToBitMask(
@@ -1027,7 +1027,7 @@ pub fn BrotliBuildAndStoreHuffmanTreeFast<AllocHT: alloc::Allocator<HuffmanTree>
                         }
                         k -= 1;
                     }
-                    if BrotliSetDepth(2i32 * n - 1i32, tree.slice_mut(), depth, 14i32) {
+                    if BrotliSetDepth(2 * n - 1, tree.slice_mut(), depth, 14) {
                         break 'break11;
                     }
                 }
@@ -1488,7 +1488,7 @@ fn BuildAndStoreHuffmanTree(
     for depth_elem in depth[..histogram_length].iter_mut() {
         *depth_elem = 0; // memset
     }
-    BrotliCreateHuffmanTree(histogram, histogram_length, 15i32, tree, depth);
+    BrotliCreateHuffmanTree(histogram, histogram_length, 15, tree, depth);
     BrotliConvertBitDepthsToSymbols(depth, histogram_length, bits);
     if count <= 4usize {
         StoreSimpleHuffmanTree(depth, &mut s4[..], count, max_bits, storage_ix, storage);
@@ -1625,8 +1625,8 @@ fn StoreTrivialContextMap(
         let mut histogram: [u32; 272] = [0; 272];
         let mut depths: [u8; 272] = [0; 272];
         let mut bits: [u16; 272] = [0; 272];
-        BrotliWriteBits(1u8, 1u64, storage_ix, storage);
-        BrotliWriteBits(4u8, repeat_code.wrapping_sub(1) as u64, storage_ix, storage);
+        BrotliWriteBits(1, 1, storage_ix, storage);
+        BrotliWriteBits(4, repeat_code.wrapping_sub(1) as u64, storage_ix, storage);
         histogram[repeat_code] = num_types as u32;
         histogram[0] = 1;
         for i in context_bits..alphabet_size {
@@ -2194,7 +2194,7 @@ pub(crate) fn store_meta_block<Alloc: BrotliAlloc, Cb>(
     if mb.distance_context_map_size == 0usize {
         StoreTrivialContextMap(
             mb.distance_histograms_size,
-            2usize,
+            2,
             tree.slice_mut(),
             storage_ix,
             storage,
@@ -2269,7 +2269,7 @@ pub(crate) fn store_meta_block<Alloc: BrotliAlloc, Cb>(
                         mb.literal_context_map.slice(),
                         storage_ix,
                         storage,
-                        6usize,
+                        6,
                     );
                     prev_byte2 = prev_byte;
                     prev_byte = literal;
@@ -2295,7 +2295,7 @@ pub(crate) fn store_meta_block<Alloc: BrotliAlloc, Cb>(
                         mb.distance_context_map.slice(),
                         storage_ix,
                         storage,
-                        2usize,
+                        2,
                     );
                 }
                 BrotliWriteBits(distnumextra as u8, distextra, storage_ix, storage);
@@ -2779,7 +2779,7 @@ pub(crate) fn store_meta_block_fast<Cb, Alloc: BrotliAlloc>(
             m,
             &mut histogram[..],
             num_literals,
-            8usize,
+            8,
             &mut lit_depth[..],
             &mut lit_bits[..],
             storage_ix,
@@ -2828,7 +2828,7 @@ pub(crate) fn store_meta_block_fast<Cb, Alloc: BrotliAlloc>(
             m,
             lit_histo.slice(),
             lit_histo.total_count_,
-            8usize,
+            8,
             &mut lit_depth[..],
             &mut lit_bits[..],
             storage_ix,
@@ -2838,7 +2838,7 @@ pub(crate) fn store_meta_block_fast<Cb, Alloc: BrotliAlloc>(
             m,
             cmd_histo.slice(),
             cmd_histo.total_count_,
-            10usize,
+            10,
             &mut cmd_depth[..],
             &mut cmd_bits[..],
             storage_ix,
@@ -2998,8 +2998,8 @@ pub(crate) fn store_uncompressed_meta_block<Cb, Alloc: BrotliAlloc>(
         );
     }
     if is_final_block {
-        BrotliWriteBits(1u8, 1u64, storage_ix, storage);
-        BrotliWriteBits(1u8, 1u64, storage_ix, storage);
+        BrotliWriteBits(1, 1, storage_ix, storage);
+        BrotliWriteBits(1, 1, storage_ix, storage);
         JumpToByteBoundary(storage_ix, storage);
     }
 }
@@ -3010,8 +3010,8 @@ pub fn BrotliStoreSyncMetaBlock(storage_ix: &mut usize, storage: &mut [u8]) {
 }
 
 pub fn BrotliWriteEmptyLastMetaBlock(storage_ix: &mut usize, storage: &mut [u8]) {
-    BrotliWriteBits(1u8, 1u64, storage_ix, storage);
-    BrotliWriteBits(1u8, 1u64, storage_ix, storage);
+    BrotliWriteBits(1, 1, storage_ix, storage);
+    BrotliWriteBits(1, 1, storage_ix, storage);
     JumpToByteBoundary(storage_ix, storage);
 }
 
@@ -3036,13 +3036,13 @@ pub fn BrotliWriteMetadataMetaBlock(
     storage_ix: &mut usize,
     storage: &mut [u8],
 ) {
-    BrotliWriteBits(1u8, 0u64, storage_ix, storage); // not last
-    BrotliWriteBits(2u8, 3u64, storage_ix, storage); // MNIBBLES = 0 (pattern 1,1)
-    BrotliWriteBits(1u8, 0u64, storage_ix, storage); // reserved
-    BrotliWriteBits(2u8, 1u64, storage_ix, storage); // num bytes for length of magic number header
+    BrotliWriteBits(1, 0, storage_ix, storage); // not last
+    BrotliWriteBits(2, 3, storage_ix, storage); // MNIBBLES = 0 (pattern 1,1)
+    BrotliWriteBits(1, 0, storage_ix, storage); // reserved
+    BrotliWriteBits(2, 1, storage_ix, storage); // num bytes for length of magic number header
     let (size_hint_count, size_hint_b128) = encode_base_128(params.size_hint as u64);
 
-    BrotliWriteBits(8u8, 3 + size_hint_count as u64, storage_ix, storage); // 1 byte of data: writing 12 for the magic number header
+    BrotliWriteBits(8, 3 + size_hint_count as u64, storage_ix, storage); // 1 byte of data: writing 12 for the magic number header
     JumpToByteBoundary(storage_ix, storage);
     let magic_number: [u8; 3] = if params.catable && !params.use_dictionary {
         [0xe1, 0x97, 0x81]
@@ -3052,11 +3052,11 @@ pub fn BrotliWriteMetadataMetaBlock(
         [0xe1, 0x97, 0x80]
     };
     for magic in magic_number.iter() {
-        BrotliWriteBits(8u8, u64::from(*magic), storage_ix, storage);
+        BrotliWriteBits(8, u64::from(*magic), storage_ix, storage);
     }
-    BrotliWriteBits(8u8, u64::from(VERSION), storage_ix, storage);
+    BrotliWriteBits(8, u64::from(VERSION), storage_ix, storage);
     for sh in size_hint_b128[..size_hint_count].iter() {
-        BrotliWriteBits(8u8, u64::from(*sh), storage_ix, storage);
+        BrotliWriteBits(8, u64::from(*sh), storage_ix, storage);
     }
 }
 

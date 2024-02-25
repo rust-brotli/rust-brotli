@@ -783,7 +783,7 @@ fn UpdateNodes<AllocF: Allocator<floatX>>(
                         + model.get_command_cost(cmdcode);
                     if let Union1::cost(nodeCost) = (nodes[pos.wrapping_add(len)]).u {
                         if cost < nodeCost {
-                            UpdateZopfliNode(nodes, pos, start, len, len_code, dist, 0usize, cost);
+                            UpdateZopfliNode(nodes, pos, start, len, len_code, dist, 0, cost);
                             result = max(result, len);
                         }
                     }
