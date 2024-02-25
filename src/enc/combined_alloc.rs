@@ -11,6 +11,7 @@ use super::histogram::{ContextType, HistogramCommand, HistogramDistance, Histogr
 use super::interface::StaticCommand;
 use super::util::floatX;
 use super::{s16, v8, PDF};
+
 /*
 struct CombiningAllocator<T1, T2, AllocT1:Allocator<T1>, AllocT2:Allocator<T2>>(AllocT1, AllocT2);
 
@@ -37,7 +38,7 @@ pub trait BrotliAlloc:
     + Allocator<u32>
     + Allocator<u64>
     + Allocator<Command>
-    + Allocator<super::util::floatX>
+    + Allocator<floatX>
     + Allocator<v8>
     + Allocator<s16>
     + Allocator<PDF>

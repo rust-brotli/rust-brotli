@@ -6,8 +6,8 @@ use super::super::alloc::{SliceWrapper, SliceWrapperMut};
 use super::block_split::BlockSplit;
 use super::command::Command;
 use super::constants::{kSigned3BitContextLookup, kUTF8ContextLookup};
-use super::util::floatX;
 use super::vectorization::Mem256i;
+use crate::enc::floatX;
 
 //#[derive(Clone)] clone is broken for arrays > 32
 pub struct HistogramLiteral {
@@ -507,26 +507,26 @@ pub fn BrotliBuildHistogramsWithContext<'a, Alloc: alloc::Allocator<u8> + alloc:
                     literal_it.type_
                 };
                 HistogramAddItem(
-                    &mut literal_histograms[(context as usize)],
-                    ringbuffer[(pos & mask)] as usize,
+                    &mut literal_histograms[context],
+                    ringbuffer[pos & mask] as usize,
                 );
                 prev_byte2 = prev_byte;
-                prev_byte = ringbuffer[(pos & mask)];
+                prev_byte = ringbuffer[pos & mask];
                 pos = pos.wrapping_add(1);
             }
             j = j.wrapping_sub(1);
         }
         pos = pos.wrapping_add(cmd.copy_len() as usize);
         if cmd.copy_len() != 0 {
-            prev_byte2 = ringbuffer[(pos.wrapping_sub(2) & mask)];
-            prev_byte = ringbuffer[(pos.wrapping_sub(1) & mask)];
-            if cmd.cmd_prefix_ as i32 >= 128i32 {
+            prev_byte2 = ringbuffer[pos.wrapping_sub(2) & mask];
+            prev_byte = ringbuffer[pos.wrapping_sub(1) & mask];
+            if cmd.cmd_prefix_ >= 128 {
                 dist_it.next();
                 let context: usize =
                     (dist_it.type_ << 2).wrapping_add(cmd.distance_context() as usize);
                 HistogramAddItem(
-                    &mut copy_dist_histograms[(context as usize)],
-                    cmd.dist_prefix_ as usize & 0x3ff,
+                    &mut copy_dist_histograms[context],
+                    (cmd.dist_prefix_ as usize) & 0x3ff,
                 );
             }
         }

@@ -99,7 +99,7 @@ type HeapBrotliAlloc = brotli::CombiningAllocator<
                       HeapAllocator<u32>,
                       HeapAllocator<u64>,
                       HeapAllocator<Command>,
-                      HeapAllocator<brotli::enc::floatX>,
+                      HeapAllocator<floatX>,
                       HeapAllocator<v8>,
                       HeapAllocator<s16>,
                       HeapAllocator<brotli::enc::PDF>,

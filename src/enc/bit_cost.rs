@@ -64,7 +64,7 @@ fn CostComputation<T: SliceWrapper<Mem256i>>(
         let element = nnz_data.slice()[i >> 3][i & 7];
         let log2p = log2total - FastLog2u16(element as u16);
         // Approximate the bit depth by round(-log2(P(symbol)))
-        let depth = min((log2p + 0.5) as u8, 15u8);
+        let depth = min((log2p + 0.5) as u8, 15);
         bits += (element as floatX) * log2p;
         if (depth as usize) > max_depth {
             max_depth = depth as usize;

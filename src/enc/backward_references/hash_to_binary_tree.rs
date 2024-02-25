@@ -161,6 +161,7 @@ where
         num_nodes = input_size;
     }
     let window_mask = (1 << params.lgwin) - 1;
+    // FIXME: BUG? Should this be u32::MAX instead?
     let invalid_pos = 0u32.wrapping_sub(window_mask);
     let buckets = <Buckets as Allocable<u32, AllocU32>>::new(m32, invalid_pos);
     H10::<AllocU32, Buckets, H10DefaultParams> {
