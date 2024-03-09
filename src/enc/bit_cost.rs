@@ -28,7 +28,7 @@ pub fn ShannonEntropy(
     let mut sum: usize = 0usize;
     let mut retval: super::util::floatX = 0i32 as super::util::floatX;
     let mut p: usize;
-    if size & 1usize != 0 && !population.is_empty() {
+    if size & 1 != 0 && !population.is_empty() {
         p = population[0] as usize;
         population = population.split_at(1).1;
         sum = sum.wrapping_add(p);
@@ -74,6 +74,7 @@ const vectorize_population_cost: bool = true;
 #[cfg(not(feature = "vector_scratch_space"))]
 const vectorize_population_cost: bool = false;
 
+#[allow(clippy::excessive_precision)]
 fn CostComputation<T: SliceWrapper<Mem256i>>(
     depth_histo: &mut [u32; BROTLI_CODE_LENGTH_CODES],
     nnz_data: &T,
@@ -260,7 +261,7 @@ pub fn BrotliPopulationCost<HistogramType: SliceWrapper<u32> + CostAccessors>(
     'break1: while i < data_size {
         {
             if (*histogram).slice()[i] > 0u32 {
-                s[count as (usize)] = i;
+                s[count as usize] = i;
                 count += 1;
                 if count > 4i32 {
                     {
@@ -269,7 +270,7 @@ pub fn BrotliPopulationCost<HistogramType: SliceWrapper<u32> + CostAccessors>(
                 }
             }
         }
-        i = i.wrapping_add(1 as (usize));
+        i = i.wrapping_add(1);
     }
     if count == 1i32 {
         return kOneSymbolHistogramCost;
@@ -278,9 +279,9 @@ pub fn BrotliPopulationCost<HistogramType: SliceWrapper<u32> + CostAccessors>(
         return kTwoSymbolHistogramCost + (*histogram).total_count() as super::util::floatX;
     }
     if count == 3i32 {
-        let histo0: u32 = (*histogram).slice()[s[0usize]];
-        let histo1: u32 = (*histogram).slice()[s[1usize]];
-        let histo2: u32 = (*histogram).slice()[s[2usize]];
+        let histo0: u32 = (*histogram).slice()[s[0]];
+        let histo1: u32 = (*histogram).slice()[s[1]];
+        let histo2: u32 = (*histogram).slice()[s[2]];
         let histomax: u32 = brotli_max_uint32_t(histo0, brotli_max_uint32_t(histo1, histo2));
         return kThreeSymbolHistogramCost
             + (2u32).wrapping_mul(histo0.wrapping_add(histo1).wrapping_add(histo2))
@@ -295,36 +296,35 @@ pub fn BrotliPopulationCost<HistogramType: SliceWrapper<u32> + CostAccessors>(
             {
                 histo[i] = (*histogram).slice()[s[i]];
             }
-            i = i.wrapping_add(1 as (usize));
+            i = i.wrapping_add(1);
         }
         i = 0usize;
         while i < 4usize {
             {
                 let mut j: usize;
-                j = i.wrapping_add(1usize);
+                j = i.wrapping_add(1);
                 while j < 4usize {
                     {
                         if histo[j] > histo[i] {
                             histo.swap(j, i);
                         }
                     }
-                    j = j.wrapping_add(1 as (usize));
+                    j = j.wrapping_add(1);
                 }
             }
-            i = i.wrapping_add(1 as (usize));
+            i = i.wrapping_add(1);
         }
-        let h23: u32 = histo[2usize].wrapping_add(histo[3usize]);
-        let histomax: u32 = brotli_max_uint32_t(h23, histo[0usize]);
+        let h23: u32 = histo[2].wrapping_add(histo[3]);
+        let histomax: u32 = brotli_max_uint32_t(h23, histo[0]);
         return kFourSymbolHistogramCost
             + (3u32).wrapping_mul(h23) as super::util::floatX
-            + (2u32).wrapping_mul(histo[0usize].wrapping_add(histo[1usize]))
-                as super::util::floatX
+            + (2u32).wrapping_mul(histo[0].wrapping_add(histo[1])) as super::util::floatX
             - histomax as super::util::floatX;
     }
     if vectorize_population_cost {
         // vectorization failed: it's faster to do things inline than split into two loops
         let mut nnz: usize = 0;
-        let mut depth_histo: [u32; 18] = [0u32; 18];
+        let mut depth_histo = [0u32; 18];
         let total_count = (*histogram).total_count() as super::util::floatX;
         let log2total = FastLog2((*histogram).total_count() as u64);
         i = 0usize;
@@ -336,7 +336,7 @@ pub fn BrotliPopulationCost<HistogramType: SliceWrapper<u32> + CostAccessors>(
                 nnz += 1;
             } else {
                 let mut reps: u32 = 1;
-                for hd in (*histogram).slice()[i + 1..(data_size as usize)].iter() {
+                for hd in (*histogram).slice()[i + 1..data_size].iter() {
                     if *hd != 0 {
                         break;
                     }
@@ -364,11 +364,8 @@ pub fn BrotliPopulationCost<HistogramType: SliceWrapper<u32> + CostAccessors>(
         }
         bits += CostComputation(&mut depth_histo, nnz_data, nnz, total_count, log2total);
     } else {
-        let mut max_depth: usize = 1usize;
-        let mut depth_histo: [u32; 18] = [
-            0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32, 0u32,
-            0u32, 0u32, 0u32, 0u32,
-        ];
+        let mut max_depth: usize = 1;
+        let mut depth_histo = [0u32; 18];
         let log2total: super::util::floatX = FastLog2((*histogram).total_count() as u64); // 64 bit here
         let mut reps: u32 = 0;
         for histo in histogram.slice()[..data_size].iter() {
@@ -386,8 +383,8 @@ pub fn BrotliPopulationCost<HistogramType: SliceWrapper<u32> + CostAccessors>(
                     }
                     reps = 0;
                 }
-                let log2p: super::util::floatX = log2total - FastLog2u16(*histo as (u16));
-                let mut depth: usize = (log2p + 0.5 as super::util::floatX) as (usize);
+                let log2p: super::util::floatX = log2total - FastLog2u16(*histo as u16);
+                let mut depth: usize = (log2p + 0.5 as super::util::floatX) as usize;
                 bits += *histo as super::util::floatX * log2p;
                 depth = core::cmp::min(depth, 15);
                 max_depth = core::cmp::max(depth, max_depth);
@@ -403,11 +400,11 @@ pub fn BrotliPopulationCost<HistogramType: SliceWrapper<u32> + CostAccessors>(
 }
 /*
 fn HistogramDataSizeCommand() -> usize {
-    704i32 as (usize)
+    704usize
 }*/
 
 /*
 fn HistogramDataSizeDistance() -> usize {
-    520i32 as (usize)
+    520usize
 }
 */

@@ -7,8 +7,8 @@ use super::brotli::concat::{BroCatli, BroCatliResult};
 use super::brotli::enc::BrotliEncoderParams;
 use super::integration_tests::UnlimitedBuffer;
 use std::io::{Read, Write};
-static RANDOM_THEN_UNICODE: &'static [u8] = include_bytes!("../../testdata/random_then_unicode");
-static ALICE: &'static [u8] = include_bytes!("../../testdata/alice29.txt");
+static RANDOM_THEN_UNICODE: &[u8] = include_bytes!("../../testdata/random_then_unicode");
+static ALICE: &[u8] = include_bytes!("../../testdata/alice29.txt");
 use super::Rebox;
 
 #[test]
@@ -109,8 +109,8 @@ fn test_custom_dict_for_multithreading() {
     }
     let mut bro_cat_li = BroCatli::new();
     let mut output = UnlimitedBuffer::new(&[]);
-    let mut ibuffer = vec![0u8; 1];
-    let mut obuffer = vec![0u8; 1];
+    let mut ibuffer = [0u8; 1];
+    let mut obuffer = [0u8; 1];
     let mut ooffset = 0usize;
     for brotli in brs.iter_mut() {
         brotli.reset_read();

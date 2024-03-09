@@ -265,15 +265,15 @@ where
     }
     let mut next_in_offset: usize = 0;
     let mut next_out_offset: usize = 0;
-    let mut total_out = Some(0usize);
+    let mut total_out = Some(0);
     let mut read_err: Result<(), ErrType> = Ok(());
     {
         let s = &mut s_orig;
 
-        //BrotliEncoderSetParameter(s, BrotliEncoderParameter::BROTLI_PARAM_MODE, 0 as (u32)); // gen, text, font
+        //BrotliEncoderSetParameter(s, BrotliEncoderParameter::BROTLI_PARAM_MODE, 0 as u32); // gen, text, font
         //BrotliEncoderSetParameter(s,
         //                          BrotliEncoderParameter::BROTLI_PARAM_SIZE_HINT,
-        //                          input.len() as (u32));
+        //                          input.len() as u32);
         let mut available_in: usize = 0;
         let mut available_out: usize = output_buffer.len();
         let mut eof = false;

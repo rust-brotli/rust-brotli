@@ -5,7 +5,7 @@ use super::{
 };
 use alloc_stdlib::StandardAlloc;
 use enc::{Allocator, SliceWrapper};
-static RANDOM_THEN_UNICODE: &'static [u8] = include_bytes!("../../../testdata/random_then_unicode"); //&[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55];
+static RANDOM_THEN_UNICODE: &[u8] = include_bytes!("../../../testdata/random_then_unicode"); //&[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55];
 #[cfg(feature = "std")]
 #[test]
 fn test_bulk_store_range() {
@@ -39,8 +39,8 @@ fn test_bulk_store_range() {
         specialization: H5Sub {
             hash_shift_: 32i32 - params_hasher.bucket_bits,
             bucket_size_: bucket_size as u32,
-            block_bits_: params_hasher.block_bits as i32,
-            block_mask_: block_size.wrapping_sub(1u64) as u32,
+            block_bits_: params_hasher.block_bits,
+            block_mask_: block_size.wrapping_sub(1) as u32,
         },
     };
     buckets = <StandardAlloc as Allocator<u32>>::alloc_cell(
@@ -141,8 +141,8 @@ fn test_bulk_store_range_off_spec() {
         specialization: H5Sub {
             hash_shift_: 32i32 - params_hasher.bucket_bits,
             bucket_size_: bucket_size as u32,
-            block_bits_: params_hasher.block_bits as i32,
-            block_mask_: block_size.wrapping_sub(1u64) as u32,
+            block_bits_: params_hasher.block_bits,
+            block_mask_: block_size.wrapping_sub(1) as u32,
         },
     };
     buckets = <StandardAlloc as Allocator<u32>>::alloc_cell(
@@ -229,8 +229,8 @@ fn test_bulk_store_range_pow2() {
         specialization: H5Sub {
             hash_shift_: 32i32 - params_hasher.bucket_bits,
             bucket_size_: bucket_size as u32,
-            block_bits_: params_hasher.block_bits as i32,
-            block_mask_: block_size.wrapping_sub(1u64) as u32,
+            block_bits_: params_hasher.block_bits,
+            block_mask_: block_size.wrapping_sub(1) as u32,
         },
     };
     buckets = <StandardAlloc as Allocator<u32>>::alloc_cell(

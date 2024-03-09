@@ -131,7 +131,7 @@ pub struct Struct1 {
 }
 
 fn LiteralSpreeLengthForSparseSearch(params: &BrotliEncoderParams) -> usize {
-    (if params.quality < 9 { 64i32 } else { 512i32 }) as (usize)
+    (if params.quality < 9 { 64i32 } else { 512i32 }) as usize
 }
 
 fn brotli_min_size_t(a: usize, b: usize) -> usize {
@@ -212,9 +212,9 @@ pub fn StitchToPreviousBlockInternal<T: AnyHasher>(
 }
 
 pub fn StoreLookaheadThenStore<T: AnyHasher>(hasher: &mut T, size: usize, dict: &[u8]) {
-    let overlap = hasher.StoreLookahead().wrapping_sub(1usize);
+    let overlap = hasher.StoreLookahead().wrapping_sub(1);
     if size > overlap {
-        hasher.BulkStoreRange(dict, !(0usize), 0, size - overlap);
+        hasher.BulkStoreRange(dict, !(0), 0, size - overlap);
     }
 }
 
@@ -259,7 +259,7 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> BasicHashe
                 let mixed2 = self.HashBytes(word11.split_at(2).1);
                 let mixed3 = self.HashBytes(word11.split_at(3).1);
                 let off: u32 =
-                    (i >> 3i32).wrapping_rem(self.buckets_.BUCKET_SWEEP() as usize) as (u32);
+                    (i >> 3i32).wrapping_rem(self.buckets_.BUCKET_SWEEP() as usize) as u32;
                 let offset0: usize = mixed0 + off as usize;
                 let offset1: usize = mixed1 + off as usize;
                 let offset2: usize = mixed2 + off as usize;
@@ -310,10 +310,10 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> AnyHasher 
         self.buckets_.HashBytes(data) as usize
     }
     fn Store(&mut self, data: &[u8], mask: usize, ix: usize) {
-        let (_, data_window) = data.split_at((ix & mask) as (usize));
+        let (_, data_window) = data.split_at((ix & mask));
         let key: u32 = self.HashBytes(data_window) as u32;
-        let off: u32 = (ix >> 3i32).wrapping_rem(self.buckets_.BUCKET_SWEEP() as usize) as (u32);
-        self.buckets_.slice_mut()[key.wrapping_add(off) as (usize)] = ix as (u32);
+        let off: u32 = (ix >> 3i32).wrapping_rem(self.buckets_.BUCKET_SWEEP() as usize) as u32;
+        self.buckets_.slice_mut()[key.wrapping_add(off) as usize] = ix as u32;
     }
     fn StoreRange(&mut self, data: &[u8], mask: usize, ix_start: usize, ix_end: usize) {
         for i in self.StoreRangeOptBasic(data, mask, ix_start, ix_end)..ix_end {
@@ -330,7 +330,7 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> AnyHasher 
         let partial_prepare_threshold = (4 << self.buckets_.BUCKET_BITS()) >> 7;
         if one_shot && input_size <= partial_prepare_threshold {
             for i in 0..input_size {
-                let key = self.HashBytes(&data[i..]) as usize;
+                let key = self.HashBytes(&data[i..]);
                 let bs = self.buckets_.BUCKET_SWEEP() as usize;
                 for item in self.buckets_.slice_mut()[key..(key + bs)].iter_mut() {
                     *item = 0;
@@ -362,21 +362,20 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> AnyHasher 
         let opts = self.Opts();
         let best_len_in: usize = out.len;
         let cur_ix_masked: usize = cur_ix & ring_buffer_mask;
-        let key: u32 = self.HashBytes(&data[(cur_ix_masked as (usize))..]) as u32;
-        let mut compare_char: i32 =
-            data[(cur_ix_masked.wrapping_add(best_len_in) as (usize))] as (i32);
+        let key: u32 = self.HashBytes(&data[cur_ix_masked..]) as u32;
+        let mut compare_char: i32 = data[cur_ix_masked.wrapping_add(best_len_in)] as i32;
         let mut best_score: u64 = out.score;
         let mut best_len: usize = best_len_in;
-        let cached_backward: usize = distance_cache[(0usize)] as (usize);
+        let cached_backward: usize = distance_cache[0] as usize;
         let mut prev_ix: usize = cur_ix.wrapping_sub(cached_backward);
         let mut is_match_found: i32 = 0i32;
         out.len_x_code = 0usize;
         if prev_ix < cur_ix {
-            prev_ix &= ring_buffer_mask as (u32) as (usize);
-            if compare_char == data[(prev_ix.wrapping_add(best_len) as (usize))] as (i32) {
+            prev_ix &= ring_buffer_mask as u32 as usize;
+            if compare_char == data[prev_ix.wrapping_add(best_len)] as i32 {
                 let len: usize = FindMatchLengthWithLimitMin4(
-                    &data[(prev_ix as (usize))..],
-                    &data[(cur_ix_masked as (usize))..],
+                    &data[prev_ix..],
+                    &data[cur_ix_masked..],
                     max_length,
                 );
                 if len != 0 {
@@ -385,9 +384,9 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> AnyHasher 
                     out.len = len;
                     out.distance = cached_backward;
                     out.score = best_score;
-                    compare_char = data[(cur_ix_masked.wrapping_add(best_len) as (usize))] as (i32);
+                    compare_char = data[cur_ix_masked.wrapping_add(best_len)] as i32;
                     if self.buckets_.BUCKET_SWEEP() == 1i32 {
-                        self.buckets_.slice_mut()[key as (usize)] = cur_ix as (u32);
+                        self.buckets_.slice_mut()[key as usize] = cur_ix as u32;
                         return true;
                     } else {
                         is_match_found = 1i32;
@@ -397,21 +396,18 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> AnyHasher 
         }
         let bucket_sweep = self.buckets_.BUCKET_SWEEP();
         if bucket_sweep == 1i32 {
-            prev_ix = self.buckets_.slice()[key as (usize)] as (usize);
-            self.buckets_.slice_mut()[key as (usize)] = cur_ix as (u32);
+            prev_ix = self.buckets_.slice()[key as usize] as usize;
+            self.buckets_.slice_mut()[key as usize] = cur_ix as u32;
             let backward: usize = cur_ix.wrapping_sub(prev_ix);
-            prev_ix &= ring_buffer_mask as (u32) as (usize);
-            if compare_char != data[(prev_ix.wrapping_add(best_len_in) as (usize))] as (i32) {
+            prev_ix &= ring_buffer_mask as u32 as usize;
+            if compare_char != data[prev_ix.wrapping_add(best_len_in)] as i32 {
                 return false;
             }
             if backward == 0usize || backward > max_backward {
                 return false;
             }
-            let len: usize = FindMatchLengthWithLimitMin4(
-                &data[(prev_ix as (usize))..],
-                &data[(cur_ix_masked as (usize))..],
-                max_length,
-            );
+            let len: usize =
+                FindMatchLengthWithLimitMin4(&data[prev_ix..], &data[cur_ix_masked..], max_length);
             if len != 0 {
                 out.len = len;
                 out.distance = backward;
@@ -424,16 +420,16 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> AnyHasher 
             {
                 let mut prev_ix = *prev_ix_ref as usize;
                 let backward: usize = cur_ix.wrapping_sub(prev_ix);
-                prev_ix &= ring_buffer_mask as (u32) as (usize);
-                if compare_char != data[(prev_ix.wrapping_add(best_len) as (usize))] as (i32) {
+                prev_ix &= ring_buffer_mask as u32 as usize;
+                if compare_char != data[prev_ix.wrapping_add(best_len)] as i32 {
                     continue;
                 }
                 if backward == 0usize || backward > max_backward {
                     continue;
                 }
                 let len = FindMatchLengthWithLimitMin4(
-                    &data[(prev_ix as (usize))..],
-                    &data[(cur_ix_masked as (usize))..],
+                    &data[prev_ix..],
+                    &data[cur_ix_masked..],
                     max_length,
                 );
                 if len != 0 {
@@ -444,8 +440,7 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> AnyHasher 
                         out.len = best_len;
                         out.distance = backward;
                         out.score = score;
-                        compare_char =
-                            data[(cur_ix_masked.wrapping_add(best_len) as (usize))] as (i32);
+                        compare_char = data[cur_ix_masked.wrapping_add(best_len)] as i32;
                         is_match_found = 1i32;
                     }
                 }
@@ -456,7 +451,7 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> AnyHasher 
                 dictionary.unwrap(),
                 dictionary_hash,
                 self,
-                &data[(cur_ix_masked as (usize))..],
+                &data[cur_ix_masked..],
                 max_length,
                 max_backward.wrapping_add(gap),
                 max_distance,
@@ -465,8 +460,8 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> AnyHasher 
             );
         }
         self.buckets_.slice_mut()
-            [(key as (usize)).wrapping_add((cur_ix >> 3).wrapping_rem(bucket_sweep as usize))] =
-            cur_ix as (u32);
+            [(key as usize).wrapping_add((cur_ix >> 3).wrapping_rem(bucket_sweep as usize))] =
+            cur_ix as u32;
         is_match_found != 0
     }
 }
@@ -474,7 +469,7 @@ impl<AllocU32: alloc::Allocator<u32>> BasicHashComputer for H2Sub<AllocU32> {
     fn HashBytes(&self, data: &[u8]) -> u32 {
         let h: u64 =
             (BROTLI_UNALIGNED_LOAD64(data) << (64i32 - 8i32 * 5i32)).wrapping_mul(kHashMul64);
-        (h >> (64i32 - 16i32)) as (u32)
+        (h >> (64i32 - 16i32)) as u32
     }
     fn BUCKET_BITS(&self) -> i32 {
         16
@@ -522,7 +517,7 @@ impl<AllocU32: alloc::Allocator<u32>> BasicHashComputer for H3Sub<AllocU32> {
     fn HashBytes(&self, data: &[u8]) -> u32 {
         let h: u64 =
             (BROTLI_UNALIGNED_LOAD64(data) << (64i32 - 8i32 * 5i32)).wrapping_mul(kHashMul64);
-        (h >> (64i32 - 16i32)) as (u32)
+        (h >> (64i32 - 16i32)) as u32
     }
 }
 pub struct H4Sub<AllocU32: alloc::Allocator<u32>> {
@@ -541,7 +536,7 @@ impl<AllocU32: alloc::Allocator<u32>> BasicHashComputer for H4Sub<AllocU32> {
     fn HashBytes(&self, data: &[u8]) -> u32 {
         let h: u64 =
             (BROTLI_UNALIGNED_LOAD64(data) << (64i32 - 8i32 * 5i32)).wrapping_mul(kHashMul64);
-        (h >> (64i32 - 17i32)) as (u32)
+        (h >> (64i32 - 17i32)) as u32
     }
 }
 impl<AllocU32: alloc::Allocator<u32>> SliceWrapperMut<u32> for H4Sub<AllocU32> {
@@ -570,7 +565,7 @@ impl<AllocU32: alloc::Allocator<u32>> BasicHashComputer for H54Sub<AllocU32> {
     fn HashBytes(&self, data: &[u8]) -> u32 {
         let h: u64 =
             (BROTLI_UNALIGNED_LOAD64(data) << (64i32 - 8i32 * 7i32)).wrapping_mul(kHashMul64);
-        (h >> (64i32 - 20i32)) as (u32)
+        (h >> (64i32 - 20i32)) as u32
     }
 }
 
@@ -620,30 +615,28 @@ impl<Alloc: alloc::Allocator<u16> + alloc::Allocator<u32>> PartialEq<H9<Alloc>> 
 
 fn adv_prepare_distance_cache(distance_cache: &mut [i32], num_distances: i32) {
     if num_distances > 4i32 {
-        let last_distance: i32 = distance_cache[(0usize)];
-        distance_cache[(4usize)] = last_distance - 1i32;
-        distance_cache[(5usize)] = last_distance + 1i32;
-        distance_cache[(6usize)] = last_distance - 2i32;
-        distance_cache[(7usize)] = last_distance + 2i32;
-        distance_cache[(8usize)] = last_distance - 3i32;
-        distance_cache[(9usize)] = last_distance + 3i32;
+        let last_distance: i32 = distance_cache[0];
+        distance_cache[4] = last_distance - 1i32;
+        distance_cache[5] = last_distance + 1i32;
+        distance_cache[6] = last_distance - 2i32;
+        distance_cache[7] = last_distance + 2i32;
+        distance_cache[8] = last_distance - 3i32;
+        distance_cache[9] = last_distance + 3i32;
         if num_distances > 10i32 {
-            let next_last_distance: i32 = distance_cache[(1usize)];
-            distance_cache[(10usize)] = next_last_distance - 1i32;
-            distance_cache[(11usize)] = next_last_distance + 1i32;
-            distance_cache[(12usize)] = next_last_distance - 2i32;
-            distance_cache[(13usize)] = next_last_distance + 2i32;
-            distance_cache[(14usize)] = next_last_distance - 3i32;
-            distance_cache[(15usize)] = next_last_distance + 3i32;
+            let next_last_distance: i32 = distance_cache[1];
+            distance_cache[10] = next_last_distance - 1i32;
+            distance_cache[11] = next_last_distance + 1i32;
+            distance_cache[12] = next_last_distance - 2i32;
+            distance_cache[13] = next_last_distance + 2i32;
+            distance_cache[14] = next_last_distance - 3i32;
+            distance_cache[15] = next_last_distance + 3i32;
         }
     }
 }
 
 pub const kDistanceCacheIndex: [u8; 16] = [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1];
 
-pub const kDistanceCacheOffset: [i8; 16] = [
-    0i8, 0i8, 0i8, 0i8, -1i8, 1i8, -2i8, 2i8, -3i8, 3i8, -1i8, 1i8, -2i8, 2i8, -3i8, 3i8,
-];
+pub const kDistanceCacheOffset: [i8; 16] = [0, 0, 0, 0, -1, 1, -2, 2, -3, 3, -1, 1, -2, 2, -3, 3];
 
 //const BROTLI_LITERAL_BYTE_SCORE: u64 = 540;
 const BROTLI_DISTANCE_BIT_PENALTY: u32 = 120;
@@ -765,11 +758,8 @@ impl<Alloc: alloc::Allocator<u16> + alloc::Allocator<u32>> AnyHasher for H9<Allo
                 continue;
             }
             {
-                let len: usize = FindMatchLengthWithLimit(
-                    &data[(prev_ix as (usize))..],
-                    &data[(cur_ix_masked as (usize))..],
-                    max_length,
-                );
+                let len: usize =
+                    FindMatchLengthWithLimit(&data[prev_ix..], &data[cur_ix_masked..], max_length);
                 if len >= 3 || (len == 2 && i < 2) {
                     let score = BackwardReferenceScoreUsingLastDistanceH9(len, i, self.h9_opts);
                     if best_score < score {
@@ -805,20 +795,20 @@ impl<Alloc: alloc::Allocator<u16> + alloc::Allocator<u32>> AnyHasher for H9<Allo
             while i > down {
                 i -= 1;
                 let mut prev_ix = bucket[i & H9_BLOCK_MASK] as usize;
-                let backward = cur_ix.wrapping_sub(prev_ix) as usize;
+                let backward = cur_ix.wrapping_sub(prev_ix);
                 if (backward > max_backward) {
                     break;
                 }
                 prev_ix &= ring_buffer_mask;
                 if (prev_ix.wrapping_add(best_len) > ring_buffer_mask
-                    || prev_best_val != data[prev_ix.wrapping_add(best_len) as usize])
+                    || prev_best_val != data[prev_ix.wrapping_add(best_len)])
                 {
                     continue;
                 }
                 {
                     let len = FindMatchLengthWithLimit(
                         data.split_at(prev_ix).1,
-                        data.split_at((cur_ix_masked as usize)).1,
+                        data.split_at(cur_ix_masked).1,
                         max_length,
                     );
                     if (len >= 4) {
@@ -836,7 +826,7 @@ impl<Alloc: alloc::Allocator<u16> + alloc::Allocator<u32>> AnyHasher for H9<Allo
                             if cur_ix_masked.wrapping_add(best_len) > ring_buffer_mask {
                                 break;
                             }
-                            prev_best_val = data[cur_ix_masked.wrapping_add(best_len) as usize];
+                            prev_best_val = data[cur_ix_masked.wrapping_add(best_len)];
                         }
                     }
                 }
@@ -845,7 +835,7 @@ impl<Alloc: alloc::Allocator<u16> + alloc::Allocator<u32>> AnyHasher for H9<Allo
             *self_num_key = self_num_key.wrapping_add(1);
         }
         if is_match_found == 0 && dictionary.is_some() {
-            let (_, cur_data) = data.split_at(cur_ix_masked as usize);
+            let (_, cur_data) = data.split_at(cur_ix_masked);
             is_match_found = SearchInStaticDictionary(
                 dictionary.unwrap(),
                 dictionary_hash,
@@ -862,7 +852,7 @@ impl<Alloc: alloc::Allocator<u16> + alloc::Allocator<u32>> AnyHasher for H9<Allo
     }
 
     fn Store(&mut self, data: &[u8], mask: usize, ix: usize) {
-        let (_, data_window) = data.split_at((ix & mask) as (usize));
+        let (_, data_window) = data.split_at((ix & mask));
         let key: u32 = self.HashBytes(data_window) as u32;
         let self_num_key = &mut self.num_.slice_mut()[key as usize];
         let minor_ix: usize = (*self_num_key as usize & H9_BLOCK_MASK);
@@ -1500,7 +1490,7 @@ impl<
     fn HashBytes(&self, data: &[u8]) -> usize {
         let shift = self.specialization.hash_shift();
         let h: u64 = self.specialization.load_and_mix_word(data);
-        (h >> shift) as (u32) as usize
+        (h >> shift) as u32 as usize
     }
     fn StoreEvenVec4(&mut self, data: &[u8], mask: usize, ix: usize) {
         if self.specialization.StoreLookahead() != 4 {
@@ -1621,16 +1611,16 @@ impl<
         buckets[offset3] = (ix + 12) as u32;
     }
     fn Store(&mut self, data: &[u8], mask: usize, ix: usize) {
-        let (_, data_window) = data.split_at((ix & mask) as (usize));
+        let (_, data_window) = data.split_at((ix & mask));
         let key: u32 = self.HashBytes(data_window) as u32;
-        let minor_ix: usize = (self.num.slice()[(key as (usize))] as (u32)
-            & self.specialization.block_mask() as u32) as (usize);
+        let minor_ix: usize =
+            (self.num.slice()[(key as usize)] as u32 & self.specialization.block_mask()) as usize;
         let offset: usize =
-            minor_ix.wrapping_add((key << self.specialization.block_bits()) as (usize));
-        self.buckets.slice_mut()[offset] = ix as (u32);
+            minor_ix.wrapping_add((key << self.specialization.block_bits()) as usize);
+        self.buckets.slice_mut()[offset] = ix as u32;
         {
-            let _lhs = &mut self.num.slice_mut()[(key as (usize))];
-            *_lhs = (*_lhs as (i32) + 1) as (u16);
+            let _lhs = &mut self.num.slice_mut()[(key as usize)];
+            *_lhs = (*_lhs as i32 + 1) as u16;
         }
     }
     fn StoreRange(&mut self, data: &[u8], mask: usize, ix_start: usize, ix_end: usize) {
@@ -1684,10 +1674,10 @@ impl<
         out.len_x_code = 0usize;
         i = 0usize;
         let cur_data = data.split_at(cur_ix_masked).1;
-        while i < self.GetHasherCommon.params.num_last_distances_to_check as (usize) {
+        while i < self.GetHasherCommon.params.num_last_distances_to_check as usize {
             'continue45: loop {
                 {
-                    let backward: usize = distance_cache[(i as (usize))] as (usize);
+                    let backward: usize = distance_cache[i] as usize;
                     let mut prev_ix: usize = cur_ix.wrapping_sub(backward);
                     if prev_ix >= cur_ix {
                         break 'continue45;
@@ -1725,7 +1715,7 @@ impl<
                 }
                 break;
             }
-            i = i.wrapping_add(1 as (usize));
+            i = i.wrapping_add(1);
         }
         {
             let key: u32 = self.HashBytes(cur_data) as u32;
@@ -1735,7 +1725,7 @@ impl<
             let bucket: &mut [u32] = self
                 .buckets
                 .slice_mut()
-                .split_at_mut((key << common_block_bits) as (usize))
+                .split_at_mut((key << common_block_bits) as usize)
                 .1
                 .split_at_mut(self.specialization.block_size() as usize)
                 .0;
@@ -1745,7 +1735,7 @@ impl<
                     i32::from(num_copy) - self.specialization.block_size() as i32,
                     0,
                 ) as usize;
-                i = num_copy as (usize);
+                i = num_copy as usize;
                 while i > down {
                     i -= 1;
                     let mut prev_ix =
@@ -1764,7 +1754,7 @@ impl<
                     if backward > max_backward {
                         break;
                     }
-                    let prev_data = data.split_at(prev_ix as usize).1;
+                    let prev_data = data.split_at(prev_ix).1;
                     let len = FindMatchLengthWithLimitMin4(prev_data, cur_data, max_length);
                     if len != 0 {
                         let score: u64 = BackwardReferenceScore(len, backward, opts);
@@ -1779,12 +1769,12 @@ impl<
                     }
                 }
             }
-            bucket[((num_copy as (u32) & (self).specialization.block_mask() as u32) as (usize))] =
-                cur_ix as (u32);
+            bucket[((num_copy as u32 & (self).specialization.block_mask()) as usize)] =
+                cur_ix as u32;
             *num_ref_mut = num_ref_mut.wrapping_add(1);
         }
         if is_match_found == 0 && dictionary.is_some() {
-            let (_, cur_data) = data.split_at(cur_ix_masked as usize);
+            let (_, cur_data) = data.split_at(cur_ix_masked);
             is_match_found = SearchInStaticDictionary(
                 dictionary.unwrap(),
                 dictionary_hash,
@@ -1859,10 +1849,10 @@ pub struct H42 {
 }
 
 fn unopt_ctzll(mut val: usize) -> u8 {
-    let mut cnt: u8 = 0i32 as (u8);
-    while val & 1usize == 0usize {
+    let mut cnt: u8 = 0u8;
+    while val & 1 == 0usize {
         val >>= 1i32;
-        cnt = (cnt as (i32) + 1) as (u8);
+        cnt = (cnt as i32 + 1) as u8;
     }
     cnt
 }
@@ -1871,7 +1861,7 @@ fn BackwardReferenceScoreUsingLastDistance(copy_length: usize, h9_opts: H9Opts) 
     ((h9_opts.literal_byte_score as u64) >> 2)
         .wrapping_mul(copy_length as u64)
         .wrapping_add((30u64 * 8u64).wrapping_mul(::core::mem::size_of::<u64>() as u64))
-        .wrapping_add(15u64)
+        .wrapping_add(15)
 }
 
 fn BackwardReferenceScore(
@@ -1907,7 +1897,7 @@ fn TestStaticDictionaryItem(
     let len: usize = item & 0x1fusize;
     let dist: usize = item >> 5i32;
     let offset: usize =
-        (dictionary.offsets_by_length[len] as (usize)).wrapping_add(len.wrapping_mul(dist));
+        (dictionary.offsets_by_length[len] as usize).wrapping_add(len.wrapping_mul(dist));
     if len > max_length {
         return 0i32;
     }
@@ -1917,13 +1907,12 @@ fn TestStaticDictionaryItem(
     }
     {
         let cut: u64 = len.wrapping_sub(matchlen) as u64;
-        let transform_id: usize = (cut << 2i32)
-            .wrapping_add(kCutoffTransforms as u64 >> cut.wrapping_mul(6) & 0x3f)
-            as usize;
+        let transform_id: usize =
+            (cut << 2i32).wrapping_add(kCutoffTransforms >> cut.wrapping_mul(6) & 0x3f) as usize;
         backward = max_backward
             .wrapping_add(dist)
-            .wrapping_add(1usize)
-            .wrapping_add(transform_id << dictionary.size_bits_by_length[len] as (i32));
+            .wrapping_add(1)
+            .wrapping_add(transform_id << dictionary.size_bits_by_length[len] as i32);
     }
     if backward > max_distance {
         return 0i32;
@@ -1958,12 +1947,12 @@ fn SearchInStaticDictionary<HasherType: AnyHasher>(
     if xself.dict_num_matches < xself.dict_num_lookups >> 7i32 {
         return 0i32;
     }
-    key = (Hash14(data) << 1i32) as (usize); //FIXME: works for any kind of hasher??
+    key = (Hash14(data) << 1i32) as usize; //FIXME: works for any kind of hasher??
     i = 0usize;
-    while i < if shallow != 0 { 1u32 } else { 2u32 } as (usize) {
+    while i < if shallow != 0 { 1u32 } else { 2u32 } as usize {
         {
-            let item: usize = dictionary_hash[(key as (usize))] as (usize);
-            xself.dict_num_lookups = xself.dict_num_lookups.wrapping_add(1 as (usize));
+            let item: usize = dictionary_hash[key] as usize;
+            xself.dict_num_lookups = xself.dict_num_lookups.wrapping_add(1);
             if item != 0usize {
                 let item_matches: i32 = TestStaticDictionaryItem(
                     dictionary,
@@ -1976,13 +1965,13 @@ fn SearchInStaticDictionary<HasherType: AnyHasher>(
                     out,
                 );
                 if item_matches != 0 {
-                    xself.dict_num_matches = xself.dict_num_matches.wrapping_add(1 as (usize));
+                    xself.dict_num_matches = xself.dict_num_matches.wrapping_add(1);
                     is_match_found = 1i32;
                 }
             }
         }
-        i = i.wrapping_add(1 as (usize));
-        key = key.wrapping_add(1 as (usize));
+        i = i.wrapping_add(1);
+        key = key.wrapping_add(1);
     }
     is_match_found
 }
@@ -2387,7 +2376,7 @@ fn CreateBackwardReferences<AH: AnyHasher>(
     num_literals: &mut usize,
 ) {
     let gap = 0usize;
-    let max_backward_limit: usize = (1usize << params.lgwin).wrapping_sub(16usize);
+    let max_backward_limit: usize = (1usize << params.lgwin).wrapping_sub(16);
     let mut new_commands_count: usize = 0;
     let mut insert_length: usize = *last_insert_len;
     let pos_end: usize = position.wrapping_add(num_bytes);
@@ -2395,7 +2384,7 @@ fn CreateBackwardReferences<AH: AnyHasher>(
         position
             .wrapping_add(num_bytes)
             .wrapping_sub(hasher.StoreLookahead())
-            .wrapping_add(1usize)
+            .wrapping_add(1)
     } else {
         position
     };
@@ -2403,7 +2392,7 @@ fn CreateBackwardReferences<AH: AnyHasher>(
     let mut apply_random_heuristics: usize = position.wrapping_add(random_heuristics_window_size);
     let kMinScore: u64 = (30u64 * 8)
         .wrapping_mul(::core::mem::size_of::<u64>() as u64)
-        .wrapping_add(100u64);
+        .wrapping_add(100);
     hasher.PrepareDistanceCache(dist_cache);
     while position.wrapping_add(hasher.HashTypeLength()) < pos_end {
         let mut max_length: usize = pos_end.wrapping_sub(position);
@@ -2432,7 +2421,7 @@ fn CreateBackwardReferences<AH: AnyHasher>(
             &mut sr,
         ) {
             let mut delayed_backward_references_in_row: i32 = 0i32;
-            max_length = max_length.wrapping_sub(1 as (usize));
+            max_length = max_length.wrapping_sub(1);
             'break6: loop {
                 'continue7: loop {
                     let cost_diff_lazy: u64 = 175;
@@ -2444,22 +2433,21 @@ fn CreateBackwardReferences<AH: AnyHasher>(
                         score: 0,
                     };
                     sr2.len = if params.quality < 5 {
-                        brotli_min_size_t(sr.len.wrapping_sub(1usize), max_length)
+                        brotli_min_size_t(sr.len.wrapping_sub(1), max_length)
                     } else {
                         0usize
                     };
                     sr2.len_x_code = 0usize;
                     sr2.distance = 0usize;
                     sr2.score = kMinScore;
-                    max_distance =
-                        brotli_min_size_t(position.wrapping_add(1usize), max_backward_limit);
+                    max_distance = brotli_min_size_t(position.wrapping_add(1), max_backward_limit);
                     let is_match_found: bool = hasher.FindLongestMatch(
                         dictionary,
                         dictionary_hash,
                         ringbuffer,
                         ringbuffer_mask,
                         dist_cache,
-                        position.wrapping_add(1usize),
+                        position.wrapping_add(1),
                         max_length,
                         max_distance,
                         gap,
@@ -2467,8 +2455,8 @@ fn CreateBackwardReferences<AH: AnyHasher>(
                         &mut sr2,
                     );
                     if is_match_found && (sr2.score >= sr.score.wrapping_add(cost_diff_lazy)) {
-                        position = position.wrapping_add(1 as (usize));
-                        insert_length = insert_length.wrapping_add(1 as (usize));
+                        position = position.wrapping_add(1);
+                        insert_length = insert_length.wrapping_add(1);
                         sr = sr2;
                         if {
                             delayed_backward_references_in_row += 1;
@@ -2483,7 +2471,7 @@ fn CreateBackwardReferences<AH: AnyHasher>(
                     }
                     break 'break6;
                 }
-                max_length = max_length.wrapping_sub(1 as (usize));
+                max_length = max_length.wrapping_sub(1);
             }
             apply_random_heuristics = position
                 .wrapping_add((2usize).wrapping_mul(sr.len))
@@ -2493,10 +2481,10 @@ fn CreateBackwardReferences<AH: AnyHasher>(
                 let distance_code: usize =
                     ComputeDistanceCode(sr.distance, max_distance, dist_cache);
                 if sr.distance <= max_distance && (distance_code > 0usize) {
-                    dist_cache[(3usize)] = dist_cache[(2usize)];
-                    dist_cache[(2usize)] = dist_cache[(1usize)];
-                    dist_cache[(1usize)] = dist_cache[(0usize)];
-                    dist_cache[(0usize)] = sr.distance as (i32);
+                    dist_cache[3] = dist_cache[2];
+                    dist_cache[2] = dist_cache[1];
+                    dist_cache[1] = dist_cache[0];
+                    dist_cache[0] = sr.distance as i32;
                     hasher.PrepareDistanceCache(dist_cache);
                 }
                 new_commands_count += 1;
@@ -2519,18 +2507,18 @@ fn CreateBackwardReferences<AH: AnyHasher>(
             hasher.StoreRange(
                 ringbuffer,
                 ringbuffer_mask,
-                position.wrapping_add(2usize),
+                position.wrapping_add(2),
                 brotli_min_size_t(position.wrapping_add(sr.len), store_end),
             );
             position = position.wrapping_add(sr.len);
         } else {
-            insert_length = insert_length.wrapping_add(1 as (usize));
-            position = position.wrapping_add(1 as (usize));
+            insert_length = insert_length.wrapping_add(1);
+            position = position.wrapping_add(1);
 
             if position > apply_random_heuristics {
                 let kMargin: usize =
-                    brotli_max_size_t(hasher.StoreLookahead().wrapping_sub(1usize), 4usize);
-                if position.wrapping_add(16usize) >= pos_end.wrapping_sub(kMargin) {
+                    brotli_max_size_t(hasher.StoreLookahead().wrapping_sub(1), 4usize);
+                if position.wrapping_add(16) >= pos_end.wrapping_sub(kMargin) {
                     insert_length = insert_length.wrapping_add(pos_end - position);
                     position = pos_end;
                 } else if position
@@ -2538,12 +2526,12 @@ fn CreateBackwardReferences<AH: AnyHasher>(
                         .wrapping_add((4usize).wrapping_mul(random_heuristics_window_size))
                 {
                     hasher.Store4Vec4(ringbuffer, ringbuffer_mask, position);
-                    insert_length = insert_length.wrapping_add(16usize);
-                    position = position.wrapping_add(16usize);
+                    insert_length = insert_length.wrapping_add(16);
+                    position = position.wrapping_add(16);
                 } else {
                     hasher.StoreEvenVec4(ringbuffer, ringbuffer_mask, position);
-                    insert_length = insert_length.wrapping_add(8usize);
-                    position = position.wrapping_add(8usize);
+                    insert_length = insert_length.wrapping_add(8);
+                    position = position.wrapping_add(8);
                 }
             }
         }

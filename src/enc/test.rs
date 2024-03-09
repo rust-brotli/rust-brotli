@@ -133,31 +133,23 @@ fn oneshot_compress(
     {
         let s = &mut s_orig;
 
-        BrotliEncoderSetParameter(
-            s,
-            BrotliEncoderParameter::BROTLI_PARAM_QUALITY,
-            quality as (u32),
-        );
+        BrotliEncoderSetParameter(s, BrotliEncoderParameter::BROTLI_PARAM_QUALITY, quality);
         if magic {
             BrotliEncoderSetParameter(
                 s,
                 BrotliEncoderParameter::BROTLI_PARAM_MAGIC_NUMBER,
-                magic as (u32),
+                magic as u32,
             );
         }
         if quality >= 10 {
             BrotliEncoderSetParameter(s, BrotliEncoderParameter::BROTLI_PARAM_Q9_5, 1);
         }
-        BrotliEncoderSetParameter(
-            s,
-            BrotliEncoderParameter::BROTLI_PARAM_LGWIN,
-            lgwin as (u32),
-        );
-        BrotliEncoderSetParameter(s, BrotliEncoderParameter::BROTLI_PARAM_MODE, 0 as (u32)); // gen, text, font
+        BrotliEncoderSetParameter(s, BrotliEncoderParameter::BROTLI_PARAM_LGWIN, lgwin);
+        BrotliEncoderSetParameter(s, BrotliEncoderParameter::BROTLI_PARAM_MODE, 0); // gen, text, font
         BrotliEncoderSetParameter(
             s,
             BrotliEncoderParameter::BROTLI_PARAM_SIZE_HINT,
-            input.len() as (u32),
+            input.len() as u32,
         );
         loop {
             let mut available_in: usize =
@@ -167,7 +159,7 @@ fn oneshot_compress(
             if available_out == 0 {
                 panic!("No output buffer space");
             }
-            let mut total_out = Some(0usize);
+            let mut total_out = Some(0);
             let op: BrotliEncoderOperation;
             if available_in == input.len() - next_in_offset {
                 op = BrotliEncoderOperation::BROTLI_OPERATION_FINISH;
