@@ -13,7 +13,7 @@ use super::histogram::{
     ClearHistograms, CostAccessors, HistogramAddHistogram, HistogramAddItem, HistogramAddVector,
     HistogramClear, HistogramCommand, HistogramDistance, HistogramLiteral,
 };
-use super::util::FastLog2;
+use super::util::{floatX, FastLog2};
 use super::vectorization::{sum8i, v256, v256i, Mem256f};
 use crate::enc::combined_alloc::allocate;
 use crate::enc::floatX;
@@ -276,7 +276,7 @@ where
         let insert_cost_ix: usize =
             u64::from(data_byte_ix.clone()).wrapping_mul(num_histograms as u64) as usize;
         let mut min_cost: floatX = 1e38;
-        let mut block_switch_cost: floatX = block_switch_bitcost;
+        let mut block_switch_cost = block_switch_bitcost;
         // main (vectorized) loop
         let insert_cost_slice = insert_cost.split_at(insert_cost_ix).1;
         for (v_index, cost_iter) in cost
