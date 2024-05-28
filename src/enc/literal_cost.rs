@@ -1,8 +1,7 @@
-#![allow(dead_code)]
-
 use core::cmp::min;
 
-use super::util::{floatX, FastLog2f64};
+use super::util::FastLog2f64;
+use crate::enc::floatX;
 use crate::enc::utf8_util::is_mostly_utf8;
 
 static kMinUTF8Ratio: floatX = 0.75;
@@ -11,36 +10,36 @@ fn UTF8Position(last: usize, c: usize, clamp: usize) -> usize {
     if c < 128usize {
         0usize
     } else if c >= 192usize {
-        min(1usize, clamp)
+        min(1, clamp)
     } else if last < 0xe0usize {
         0usize
     } else {
-        min(2usize, clamp)
+        min(2, clamp)
     }
 }
 
 fn DecideMultiByteStatsLevel(pos: usize, len: usize, mask: usize, data: &[u8]) -> usize {
     let mut counts = [0usize; 3];
-    let mut max_utf8: usize = 1;
-    let mut last_c: usize = 0usize;
+    let mut max_utf8 = 1usize;
+    let mut last_c = 0usize;
     let mut i: usize;
     i = 0usize;
     while i < len {
         {
-            let c: usize = data[(pos.wrapping_add(i) & mask)] as usize;
+            let c: usize = data[pos.wrapping_add(i) & mask] as usize;
             {
                 let _rhs = 1;
-                let _lhs = &mut counts[UTF8Position(last_c, c, 2usize)];
+                let _lhs = &mut counts[UTF8Position(last_c, c, 2)];
                 *_lhs = (*_lhs).wrapping_add(_rhs as usize);
             }
             last_c = c;
         }
         i = i.wrapping_add(1);
     }
-    if counts[2] < 500usize {
+    if counts[2] < 500 {
         max_utf8 = 1;
     }
-    if counts[1].wrapping_add(counts[2]) < 25usize {
+    if counts[1].wrapping_add(counts[2]) < 25 {
         max_utf8 = 0usize;
     }
     max_utf8
@@ -65,7 +64,7 @@ fn EstimateBitCostsForLiteralsUTF8(
         i = 0usize;
         while i < in_window {
             {
-                let c: usize = data[(pos.wrapping_add(i) & mask)] as usize;
+                let c = data[pos.wrapping_add(i) & mask] as usize;
                 {
                     let _rhs = 1;
                     let _lhs = &mut histogram[utf8_pos][c];
@@ -89,26 +88,26 @@ fn EstimateBitCostsForLiteralsUTF8(
                 let c: usize = (if i < window_half.wrapping_add(1) {
                     0i32
                 } else {
-                    data[(pos
+                    data[pos
                         .wrapping_add(i)
                         .wrapping_sub(window_half)
                         .wrapping_sub(1)
-                        & mask)] as i32
+                        & mask] as i32
                 }) as usize;
                 let last_c: usize = (if i < window_half.wrapping_add(2) {
                     0i32
                 } else {
-                    data[(pos
+                    data[pos
                         .wrapping_add(i)
                         .wrapping_sub(window_half)
                         .wrapping_sub(2)
-                        & mask)] as i32
+                        & mask] as i32
                 }) as usize;
                 let utf8_pos2: usize = UTF8Position(last_c, c, max_utf8);
                 {
                     let _rhs = 1;
                     let _lhs = &mut histogram[utf8_pos2]
-                        [data[(pos.wrapping_add(i).wrapping_sub(window_half) & mask)] as usize];
+                        [data[pos.wrapping_add(i).wrapping_sub(window_half) & mask] as usize];
                     *_lhs = (*_lhs).wrapping_sub(_rhs as usize);
                 }
                 {
@@ -118,21 +117,21 @@ fn EstimateBitCostsForLiteralsUTF8(
                 }
             }
             if i.wrapping_add(window_half) < len {
-                let c: usize = data[(pos
+                let c = data[pos
                     .wrapping_add(i)
                     .wrapping_add(window_half)
                     .wrapping_sub(1)
-                    & mask)] as usize;
-                let last_c: usize = data[(pos
+                    & mask] as usize;
+                let last_c = data[pos
                     .wrapping_add(i)
                     .wrapping_add(window_half)
                     .wrapping_sub(2)
-                    & mask)] as usize;
+                    & mask] as usize;
                 let utf8_pos2: usize = UTF8Position(last_c, c, max_utf8);
                 {
                     let _rhs = 1;
                     let _lhs = &mut histogram[utf8_pos2]
-                        [data[(pos.wrapping_add(i).wrapping_add(window_half) & mask)] as usize];
+                        [data[pos.wrapping_add(i).wrapping_add(window_half) & mask] as usize];
                     *_lhs = (*_lhs).wrapping_add(_rhs as usize);
                 }
                 {
@@ -145,13 +144,13 @@ fn EstimateBitCostsForLiteralsUTF8(
                 let c: usize = (if i < 1 {
                     0i32
                 } else {
-                    data[(pos.wrapping_add(i).wrapping_sub(1) & mask)] as i32
-                }) as usize;
+                    data[pos.wrapping_add(i).wrapping_sub(1) & mask] as i32
+                }) as (usize);
                 let last_c: usize = (if i < 2usize {
                     0i32
                 } else {
-                    data[(pos.wrapping_add(i).wrapping_sub(2) & mask)] as i32
-                }) as usize;
+                    data[pos.wrapping_add(i).wrapping_sub(2) & mask] as i32
+                }) as (usize);
                 let utf8_pos: usize = UTF8Position(last_c, c, max_utf8);
                 let masked_pos: usize = pos.wrapping_add(i) & mask;
                 let mut histo: usize = histogram[utf8_pos][data[masked_pos] as usize];
@@ -194,7 +193,7 @@ pub fn BrotliEstimateBitCostsForLiterals(
         let mut i: usize;
         for i in 0usize..in_window {
             let _rhs = 1;
-            let _lhs = &mut histogram[data[(pos.wrapping_add(i) & mask)] as usize];
+            let _lhs = &mut histogram[data[pos.wrapping_add(i) & mask] as usize];
             *_lhs = (*_lhs).wrapping_add(_rhs as usize);
         }
         i = 0usize;
@@ -205,7 +204,7 @@ pub fn BrotliEstimateBitCostsForLiterals(
                     {
                         let _rhs = 1;
                         let _lhs = &mut histogram
-                            [data[(pos.wrapping_add(i).wrapping_sub(window_half) & mask)] as usize];
+                            [data[pos.wrapping_add(i).wrapping_sub(window_half) & mask] as usize];
                         *_lhs = (*_lhs).wrapping_sub(_rhs as usize);
                     }
                     in_window = in_window.wrapping_sub(1);
@@ -214,12 +213,12 @@ pub fn BrotliEstimateBitCostsForLiterals(
                     {
                         let _rhs = 1;
                         let _lhs = &mut histogram
-                            [data[(pos.wrapping_add(i).wrapping_add(window_half) & mask)] as usize];
+                            [data[pos.wrapping_add(i).wrapping_add(window_half) & mask] as usize];
                         *_lhs = (*_lhs).wrapping_add(_rhs as usize);
                     }
                     in_window = in_window.wrapping_add(1);
                 }
-                histo = histogram[data[(pos.wrapping_add(i) & mask)] as usize];
+                histo = histogram[data[pos.wrapping_add(i) & mask] as usize];
                 if histo == 0usize {
                     histo = 1;
                 }

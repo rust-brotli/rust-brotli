@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use alloc::Allocator;
 use core;
 use core::cmp::{max, min};
@@ -12,7 +10,7 @@ use super::backward_references::{
     H6Sub, HQ5Sub, HQ7Sub, HowPrepared, StoreLookaheadThenStore, Struct1, UnionHasher, H9,
     H9_BLOCK_BITS, H9_BLOCK_SIZE, H9_BUCKET_BITS, H9_NUM_LAST_DISTANCES_TO_CHECK,
 };
-use super::bit_cost::{BitsEntropy, ShannonEntropy};
+use super::bit_cost::{shannon_entropy, BitsEntropy};
 use super::brotli_bit_stream::{
     store_meta_block, store_meta_block_fast, store_meta_block_trivial,
     store_uncompressed_meta_block, BrotliWriteEmptyLastMetaBlock, BrotliWriteMetadataMetaBlock,
@@ -37,8 +35,9 @@ use super::metablock::{
 };
 pub use super::parameters::BrotliEncoderParameter;
 use super::static_dict::{kNumDistanceCacheEntries, BrotliGetDictionary};
-use super::util::{floatX, Log2FloorNonZero};
+use super::util::Log2FloorNonZero;
 use crate::enc::combined_alloc::{alloc_default, allocate};
+use crate::enc::floatX;
 use crate::enc::input_pair::InputReferenceMut;
 use crate::enc::utf8_util::is_mostly_utf8;
 
@@ -535,7 +534,7 @@ fn check_large_window_ok() -> bool {
 }
 
 pub fn SanitizeParams(params: &mut BrotliEncoderParams) {
-    params.quality = min(11i32, max(0i32, params.quality));
+    params.quality = min(11, max(0, params.quality));
     if params.lgwin < 10i32 {
         params.lgwin = 10i32;
     } else if params.lgwin > 24i32 {
@@ -561,10 +560,10 @@ fn ComputeLgBlock(params: &BrotliEncoderParams) -> i32 {
     } else if lgblock == 0i32 {
         lgblock = 16i32;
         if params.quality >= 9i32 && (params.lgwin > lgblock) {
-            lgblock = min(18i32, params.lgwin);
+            lgblock = min(18, params.lgwin);
         }
     } else {
-        lgblock = min(24i32, max(16i32, lgblock));
+        lgblock = min(24, max(16, lgblock));
     }
     lgblock
 }
@@ -656,7 +655,7 @@ impl<Alloc: BrotliAlloc> BrotliEncoderStateStruct<Alloc> {
         {
             let mut lgwin: i32 = self.params.lgwin;
             if self.params.quality == 0i32 || self.params.quality == 1i32 {
-                lgwin = max(lgwin, 18i32);
+                lgwin = max(lgwin, 18);
             }
             EncodeWindowBits(
                 lgwin,
@@ -749,26 +748,27 @@ fn RingBufferWrite<AllocU8: alloc::Allocator<u8>>(
         rb.data_mo.slice_mut()[rb
             .buffer_index
             .wrapping_add(rb.size_ as usize)
-            .wrapping_sub(2)] = 0u8;
+            .wrapping_sub(2)] = 0;
         rb.data_mo.slice_mut()[rb
             .buffer_index
             .wrapping_add(rb.size_ as usize)
-            .wrapping_sub(1)] = 0u8;
+            .wrapping_sub(1)] = 0;
     }
     {
         let masked_pos: usize = (rb.pos_ & rb.mask_) as usize;
         RingBufferWriteTail(bytes, n, rb);
         if masked_pos.wrapping_add(n) <= rb.size_ as usize {
             // a single write fits
-            let start = rb.buffer_index.wrapping_add(masked_pos);
+            let start = (rb.buffer_index.wrapping_add(masked_pos));
             rb.data_mo.slice_mut()[start..(start + n)].clone_from_slice(&bytes[..n]);
         } else {
             {
-                let start = rb.buffer_index.wrapping_add(masked_pos);
+                let start = (rb.buffer_index.wrapping_add(masked_pos));
                 let mid = min(n, (rb.total_size_ as usize).wrapping_sub(masked_pos));
                 rb.data_mo.slice_mut()[start..(start + mid)].clone_from_slice(&bytes[..mid]);
             }
-            let xstart = rb.buffer_index.wrapping_add(0);
+            // FIXME?  Adding zero?
+            let xstart = (rb.buffer_index.wrapping_add(0));
             let size = n.wrapping_sub((rb.size_ as usize).wrapping_sub(masked_pos));
             let bytes_start = (rb.size_ as usize).wrapping_sub(masked_pos);
             rb.data_mo.slice_mut()[xstart..(xstart + size)]
@@ -1103,11 +1103,6 @@ fn HasherReset<Alloc: alloc::Allocator<u16> + alloc::Allocator<u32>>(t: &mut Uni
         _ => (t.GetHasherCommon()).is_prepared_ = 0i32,
     };
 }
-fn GetHasherCommon<Alloc: alloc::Allocator<u16> + alloc::Allocator<u32>>(
-    t: &mut UnionHasher<Alloc>,
-) -> &mut Struct1 {
-    t.GetHasherCommon()
-}
 
 #[deprecated(note = "Use hasher_setup instead")]
 pub fn HasherSetup<Alloc: Allocator<u16> + Allocator<u32>>(
@@ -1174,7 +1169,7 @@ fn HasherPrependCustomDictionary<Alloc: alloc::Allocator<u16> + alloc::Allocator
     size: usize,
     dict: &[u8],
 ) {
-    hasher_setup(m, handle, params, dict, 0usize, size, false);
+    hasher_setup(m, handle, params, dict, 0, size, false);
     match handle {
         &mut UnionHasher::H2(ref mut hasher) => StoreLookaheadThenStore(hasher, size, dict),
         &mut UnionHasher::H3(ref mut hasher) => StoreLookaheadThenStore(hasher, size, dict),
@@ -1361,7 +1356,7 @@ fn MakeUncompressedStream(input: &[u8], input_size: usize, output: &mut [u8]) ->
     let mut result: usize = 0usize;
     let mut offset: usize = 0usize;
     if input_size == 0usize {
-        output[0] = 6u8;
+        output[0] = 6;
         return 1;
     }
     output[result] = 0x21u8;
@@ -1731,7 +1726,6 @@ fn ChooseContextMap(
     let mut two_prefix_histo = [0u32; 6];
 
     let mut i: usize;
-    let mut dummy: usize = 0;
     let mut entropy = [0.0 as floatX; 4];
     i = 0usize;
     while i < 9usize {
@@ -1749,18 +1743,14 @@ fn ChooseContextMap(
         }
         i = i.wrapping_add(1);
     }
-    entropy[1] = ShannonEntropy(&monogram_histo[..], 3usize, &mut dummy);
-    entropy[2] = ShannonEntropy(&two_prefix_histo[..], 3usize, &mut dummy)
-        + ShannonEntropy(&two_prefix_histo[3..], 3usize, &mut dummy);
+    entropy[1] = shannon_entropy(&monogram_histo[..], 3).0;
+    entropy[2] =
+        shannon_entropy(&two_prefix_histo[..], 3).0 + shannon_entropy(&two_prefix_histo[3..], 3).0;
     entropy[3] = 0.0;
     for i in 0usize..3usize {
-        entropy[3] += ShannonEntropy(
-            &bigram_histo[(3usize).wrapping_mul(i)..],
-            3usize,
-            &mut dummy,
-        );
+        entropy[3] += shannon_entropy(&bigram_histo[(3usize).wrapping_mul(i)..], 3).0;
     }
-    let total: usize = monogram_histo[0]
+    let total = monogram_histo[0]
         .wrapping_add(monogram_histo[1])
         .wrapping_add(monogram_histo[2]) as usize;
     entropy[0] = 1.0 / (total as floatX);
@@ -1825,7 +1815,6 @@ fn ShouldUseComplexStaticContextMap(
         let mut context_histo: [[u32; 32]; 13] = [[0; 32]; 13];
         let mut total = 0u32;
         let mut entropy = [0.0 as floatX; 3];
-        let mut dummy = 0usize;
         let utf8_lut = BROTLI_CONTEXT_LUT(ContextType::CONTEXT_UTF8);
         while start_pos + 64 <= end_pos {
             let stride_end_pos = start_pos + 64;
@@ -1847,11 +1836,11 @@ fn ShouldUseComplexStaticContextMap(
             }
             start_pos += 4096;
         }
-        entropy[1] = ShannonEntropy(&combined_histo[..], 32, &mut dummy);
+        entropy[1] = shannon_entropy(&combined_histo[..], 32).0;
         entropy[2] = 0.0;
         for i in 0..13 {
             assert!(i < 13);
-            entropy[2] += ShannonEntropy(&context_histo[i][..], 32, &mut dummy);
+            entropy[2] += shannon_entropy(&context_histo[i][..], 32).0;
         }
         entropy[0] = 1.0 / (total as floatX);
         entropy[1] *= entropy[0];
@@ -1901,12 +1890,12 @@ fn DecideOverLiteralContextModeling(
             {
                 static lut: [i32; 4] = [0, 0, 1, 2];
                 let stride_end_pos: usize = start_pos.wrapping_add(64);
-                let mut prev: i32 = lut[(input[(start_pos & mask)] as i32 >> 6) as usize] * 3i32;
+                let mut prev: i32 = lut[(input[start_pos & mask] as i32 >> 6) as usize] * 3;
                 let mut pos: usize;
                 pos = start_pos.wrapping_add(1);
                 while pos < stride_end_pos {
                     {
-                        let literal: u8 = input[(pos & mask)];
+                        let literal = input[pos & mask];
                         {
                             let _rhs = 1;
                             let cur_ind = (prev + lut[(literal as i32 >> 6) as usize]);
@@ -1970,7 +1959,7 @@ fn WriteMetaBlockInternal<Alloc: BrotliAlloc, Cb>(
     let literal_context_lut = BROTLI_CONTEXT_LUT(literal_context_mode);
     let mut block_params = params.clone();
     if bytes == 0usize {
-        BrotliWriteBits(2usize, 3, storage_ix, storage);
+        BrotliWriteBits(2, 3, storage_ix, storage);
         *storage_ix = storage_ix.wrapping_add(7u32 as usize) & !7u32 as usize;
         return;
     }
@@ -2254,7 +2243,7 @@ impl<Alloc: BrotliAlloc> BrotliEncoderStateStruct<Alloc> {
                     &mut storage_ix,
                     self.storage_.slice_mut(),
                 );
-                self.last_bytes_ = self.storage_.slice()[(storage_ix >> 3)] as u16
+                self.last_bytes_ = self.storage_.slice()[storage_ix >> 3] as u16
                     | ((self.storage_.slice()[1 + (storage_ix >> 3)] as u16) << 8);
                 self.last_bytes_bits_ = (storage_ix & 7u32 as usize) as u8;
                 self.next_out_ = NextOut::DynamicStorage(0);
@@ -2287,7 +2276,7 @@ impl<Alloc: BrotliAlloc> BrotliEncoderStateStruct<Alloc> {
                     false, /* suppress meta-block logging */
                     callback,
                 );
-                self.last_bytes_ = self.storage_.slice()[(storage_ix >> 3)] as u16
+                self.last_bytes_ = self.storage_.slice()[storage_ix >> 3] as u16
                     | ((self.storage_.slice()[1 + (storage_ix >> 3)] as u16) << 8);
                 self.last_bytes_bits_ = (storage_ix & 7u32 as usize) as u8;
                 self.prev_byte2_ = self.prev_byte_;
@@ -2366,7 +2355,7 @@ impl<Alloc: BrotliAlloc> BrotliEncoderStateStruct<Alloc> {
                         self.storage_.slice_mut(),
                     );
                 }
-                self.last_bytes_ = self.storage_.slice()[(storage_ix >> 3)] as u16
+                self.last_bytes_ = self.storage_.slice()[storage_ix >> 3] as u16
                     | ((self.storage_.slice()[(storage_ix >> 3) + 1] as u16) << 8);
                 self.last_bytes_bits_ = (storage_ix & 7u32 as usize) as u8;
             }
@@ -2466,10 +2455,10 @@ impl<Alloc: BrotliAlloc> BrotliEncoderStateStruct<Alloc> {
             return true;
         }
         {
-            let metablock_size: u32 = self.input_pos_.wrapping_sub(self.last_flush_pos_) as u32;
-            //let mut storage_ix: usize = s.last_bytes_bits_ as usize;
-            //s.storage_.slice_mut()[0] = (*s).last_bytes_ as u8;
-            //s.storage_.slice_mut()[1] = ((*s).last_bytes_ >> 8) as u8;
+            let metablock_size: u32 = self.input_pos_.wrapping_sub(self.last_flush_pos_) as (u32);
+            // let mut storage_ix = s.last_bytes_bits_ as usize;
+            // s.storage_.slice_mut()[0] = s.last_bytes_ as u8;
+            // s.storage_.slice_mut()[1] = (s.last_bytes_ >> 8) as u8;
 
             WriteMetaBlockInternal(
                 &mut self.m8,
@@ -2496,9 +2485,9 @@ impl<Alloc: BrotliAlloc> BrotliEncoderStateStruct<Alloc> {
                 callback,
             );
 
-            self.last_bytes_ = self.storage_.slice()[(storage_ix >> 3)] as u16
+            self.last_bytes_ = self.storage_.slice()[storage_ix >> 3] as u16
                 | ((self.storage_.slice()[1 + (storage_ix >> 3)] as u16) << 8);
-            self.last_bytes_bits_ = (storage_ix & 7u32 as usize) as u8;
+            self.last_bytes_bits_ = (storage_ix & 7u32 as (usize)) as (u8);
             self.last_flush_pos_ = self.input_pos_;
             if self.update_last_processed_pos() {
                 HasherReset(&mut self.hasher_);
@@ -2532,10 +2521,10 @@ impl<Alloc: BrotliAlloc> BrotliEncoderStateStruct<Alloc> {
         self.last_bytes_ = 0;
         self.last_bytes_bits_ = 0;
         BrotliWriteBits(1, 0, &mut storage_ix, header);
-        BrotliWriteBits(2usize, 3, &mut storage_ix, header);
+        BrotliWriteBits(2, 3, &mut storage_ix, header);
         BrotliWriteBits(1, 0, &mut storage_ix, header);
         if block_size == 0usize {
-            BrotliWriteBits(2usize, 0, &mut storage_ix, header);
+            BrotliWriteBits(2, 0, &mut storage_ix, header);
         } else {
             let nbits: u32 = if block_size == 1 {
                 0u32
@@ -2543,7 +2532,7 @@ impl<Alloc: BrotliAlloc> BrotliEncoderStateStruct<Alloc> {
                 Log2FloorNonZero((block_size as u32).wrapping_sub(1) as (u64)).wrapping_add(1)
             };
             let nbytes: u32 = nbits.wrapping_add(7).wrapping_div(8);
-            BrotliWriteBits(2usize, nbytes as (u64), &mut storage_ix, header);
+            BrotliWriteBits(2, nbytes as (u64), &mut storage_ix, header);
             BrotliWriteBits(
                 (8u32).wrapping_mul(nbytes) as usize,
                 block_size.wrapping_sub(1) as u64,
@@ -2642,7 +2631,7 @@ impl<Alloc: BrotliAlloc> BrotliEncoderStateStruct<Alloc> {
                     // *next_out = next_out.offset(copy as isize);
                     *available_out = available_out.wrapping_sub(copy as usize);
                 } else {
-                    let copy: u32 = min(self.remaining_metadata_bytes_, 16u32);
+                    let copy: u32 = min(self.remaining_metadata_bytes_, 16);
                     self.next_out_ = NextOut::TinyBuf(0);
                     GetNextOut!(self)[..(copy as usize)].clone_from_slice(
                         &next_in_array[*next_in_offset..(*next_in_offset + copy as usize)],
@@ -2810,7 +2799,7 @@ impl<Alloc: BrotliAlloc> BrotliEncoderStateStruct<Alloc> {
                     self.next_out_ = NextOut::DynamicStorage(0);
                     self.available_out_ = out_bytes;
                 }
-                self.last_bytes_ = storage[(storage_ix >> 3)] as u16
+                self.last_bytes_ = storage[storage_ix >> 3] as u16
                     | ((storage[1 + (storage_ix >> 3)] as u16) << 8);
                 self.last_bytes_bits_ = (storage_ix & 7u32 as usize) as u8;
                 if force_flush {

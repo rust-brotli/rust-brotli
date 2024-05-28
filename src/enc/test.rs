@@ -33,6 +33,7 @@ use super::histogram::{ContextType, HistogramCommand, HistogramDistance, Histogr
 use super::pdf::PDF;
 use super::{interface, s16, v8, StaticCommand, ZopfliNode};
 use crate::enc::encode::BrotliEncoderStateStruct;
+use crate::enc::floatX;
 
 declare_stack_allocator_struct!(MemPool, 128, stack);
 declare_stack_allocator_struct!(CallocatedFreelist4096, 128, calloc);
@@ -60,14 +61,13 @@ fn oneshot_compress(
     let stack_u64_buffer =
         unsafe { define_allocator_memory_pool!(96, u64, [0; 32 * 1024], calloc) };
     let stack_f64_buffer =
-        unsafe { define_allocator_memory_pool!(48, super::util::floatX, [0; 128 * 1024], calloc) };
+        unsafe { define_allocator_memory_pool!(48, floatX, [0; 128 * 1024], calloc) };
     let mut stack_global_buffer_v8 =
         define_allocator_memory_pool!(64, v8, [v8::default(); 1024 * 16], stack);
     let mf8 = StackAllocatedFreelist64::<v8>::new_allocator(&mut stack_global_buffer_v8, bzero);
     let mut stack_16x16_buffer =
         define_allocator_memory_pool!(64, s16, [s16::default(); 1024 * 16], stack);
     let m16x16 = StackAllocatedFreelist64::<s16>::new_allocator(&mut stack_16x16_buffer, bzero);
-
     let stack_hl_buffer =
         unsafe { define_allocator_memory_pool!(48, HistogramLiteral, [0; 128 * 1024], calloc) };
     let stack_hc_buffer =
@@ -99,9 +99,7 @@ fn oneshot_compress(
         CallocatedFreelist1024::<u64>::new_allocator(stack_u64_buffer.data, bzero);
     let stack_zn_allocator =
         CallocatedFreelist1024::<ZopfliNode>::new_allocator(stack_zn_buffer.data, bzero);
-    let mf64 =
-        CallocatedFreelist2048::<super::util::floatX>::new_allocator(stack_f64_buffer.data, bzero);
-
+    let mf64 = CallocatedFreelist2048::<floatX>::new_allocator(stack_f64_buffer.data, bzero);
     let mpdf = CallocatedFreelist2048::<PDF>::new_allocator(stack_pdf_buffer.data, bzero);
     let msc = CallocatedFreelist2048::<StaticCommand>::new_allocator(stack_sc_buffer.data, bzero);
     let stack_mc_allocator =

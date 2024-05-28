@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 mod benchmark;
 pub mod hash_to_binary_tree;
 pub mod hq;
@@ -18,8 +16,6 @@ use super::static_dict::{
 use super::util::{floatX, Log2FloorNonZero};
 use crate::enc::combined_alloc::allocate;
 
-static kBrotliMinWindowBits: i32 = 10;
-static kBrotliMaxWindowBits: i32 = 24;
 pub static kInvalidMatch: u32 = 0x0fff_ffff;
 static kCutoffTransformsCount: u32 = 10;
 static kCutoffTransforms: u64 = 0x071b_520a_da2d_3200;
@@ -299,7 +295,7 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> AnyHasher 
         self.buckets_.HashBytes(data) as usize
     }
     fn Store(&mut self, data: &[u8], mask: usize, ix: usize) {
-        let (_, data_window) = data.split_at((ix & mask));
+        let (_, data_window) = data.split_at(ix & mask);
         let key: u32 = self.HashBytes(data_window) as u32;
         let off: u32 = (ix >> 3).wrapping_rem(self.buckets_.BUCKET_SWEEP() as usize) as u32;
         self.buckets_.slice_mut()[key.wrapping_add(off) as usize] = ix as u32;
@@ -352,10 +348,10 @@ impl<T: SliceWrapperMut<u32> + SliceWrapper<u32> + BasicHashComputer> AnyHasher 
         let best_len_in: usize = out.len;
         let cur_ix_masked: usize = cur_ix & ring_buffer_mask;
         let key: u32 = self.HashBytes(&data[cur_ix_masked..]) as u32;
-        let mut compare_char: i32 = data[cur_ix_masked.wrapping_add(best_len_in)] as i32;
+        let mut compare_char = data[cur_ix_masked.wrapping_add(best_len_in)] as i32;
         let mut best_score: u64 = out.score;
         let mut best_len: usize = best_len_in;
-        let cached_backward: usize = distance_cache[0] as usize;
+        let cached_backward = distance_cache[0] as usize;
         let mut prev_ix: usize = cur_ix.wrapping_sub(cached_backward);
         let mut is_match_found = false;
         out.len_x_code = 0usize;
@@ -605,20 +601,20 @@ impl<Alloc: alloc::Allocator<u16> + alloc::Allocator<u32>> PartialEq<H9<Alloc>> 
 fn adv_prepare_distance_cache(distance_cache: &mut [i32], num_distances: i32) {
     if num_distances > 4i32 {
         let last_distance: i32 = distance_cache[0];
-        distance_cache[4] = last_distance - 1i32;
-        distance_cache[5] = last_distance + 1i32;
-        distance_cache[6] = last_distance - 2i32;
-        distance_cache[7] = last_distance + 2i32;
-        distance_cache[8] = last_distance - 3i32;
-        distance_cache[9] = last_distance + 3i32;
+        distance_cache[4] = last_distance - 1;
+        distance_cache[5] = last_distance + 1;
+        distance_cache[6] = last_distance - 2;
+        distance_cache[7] = last_distance + 2;
+        distance_cache[8] = last_distance - 3;
+        distance_cache[9] = last_distance + 3;
         if num_distances > 10i32 {
             let next_last_distance: i32 = distance_cache[1];
-            distance_cache[10] = next_last_distance - 1i32;
-            distance_cache[11] = next_last_distance + 1i32;
-            distance_cache[12] = next_last_distance - 2i32;
-            distance_cache[13] = next_last_distance + 2i32;
-            distance_cache[14] = next_last_distance - 3i32;
-            distance_cache[15] = next_last_distance + 3i32;
+            distance_cache[10] = next_last_distance - 1;
+            distance_cache[11] = next_last_distance + 1;
+            distance_cache[12] = next_last_distance - 2;
+            distance_cache[13] = next_last_distance + 2;
+            distance_cache[14] = next_last_distance - 3;
+            distance_cache[15] = next_last_distance + 3;
         }
     }
 }
@@ -841,7 +837,7 @@ impl<Alloc: alloc::Allocator<u16> + alloc::Allocator<u32>> AnyHasher for H9<Allo
     }
 
     fn Store(&mut self, data: &[u8], mask: usize, ix: usize) {
-        let (_, data_window) = data.split_at((ix & mask));
+        let (_, data_window) = data.split_at(ix & mask);
         let key: u32 = self.HashBytes(data_window) as u32;
         let self_num_key = &mut self.num_.slice_mut()[key as usize];
         let minor_ix: usize = (*self_num_key as usize & H9_BLOCK_MASK);
@@ -1281,6 +1277,8 @@ impl<
         }
         ix_start
     }
+
+    #[cfg(feature = "benchmark")]
     fn BulkStoreRangeOptMemFetchLazyDupeUpdate(
         &mut self,
         data: &[u8],
@@ -1363,6 +1361,8 @@ impl<
         }
         ix_start
     }
+
+    #[cfg(feature = "benchmark")]
     fn BulkStoreRangeOptRandomDupeUpdate(
         &mut self,
         data: &[u8],
@@ -1602,7 +1602,7 @@ impl<
         buckets[offset3] = (ix + 12) as u32;
     }
     fn Store(&mut self, data: &[u8], mask: usize, ix: usize) {
-        let (_, data_window) = data.split_at((ix & mask));
+        let (_, data_window) = data.split_at(ix & mask);
         let key: u32 = self.HashBytes(data_window) as u32;
         let minor_ix: usize =
             (self.num.slice()[(key as usize)] as u32 & self.specialization.block_mask()) as usize;
@@ -1664,7 +1664,7 @@ impl<
         out.len_x_code = 0usize;
         let cur_data = data.split_at(cur_ix_masked).1;
         for i in 0..self.GetHasherCommon.params.num_last_distances_to_check as usize {
-            let backward: usize = distance_cache[i] as usize;
+            let backward = distance_cache[i] as usize;
             let mut prev_ix: usize = cur_ix.wrapping_sub(backward);
             if prev_ix >= cur_ix || backward > max_backward {
                 continue;
@@ -1747,7 +1747,7 @@ impl<
                 }
             }
         }
-        bucket[(num_copy as u32 & self.specialization.block_mask()) as usize] = cur_ix as u32;
+        bucket[((num_copy as u32) & self.specialization.block_mask()) as usize] = cur_ix as u32;
         *num_ref_mut = num_ref_mut.wrapping_add(1);
 
         if !is_match_found && dictionary.is_some() {
@@ -1821,17 +1821,7 @@ pub struct H42 {
     pub head: [u16; 32768],
     pub tiny_hash: [u8; 65536],
     pub banks: [BankH42; 512],
-    free_slot_idx: [u16; 512],
     pub max_hops: usize,
-}
-
-fn unopt_ctzll(mut val: usize) -> u8 {
-    let mut cnt: u8 = 0u8;
-    while val & 1 == 0usize {
-        val >>= 1i32;
-        cnt = (cnt as i32 + 1) as u8;
-    }
-    cnt
 }
 
 fn BackwardReferenceScoreUsingLastDistance(copy_length: usize, h9_opts: H9Opts) -> u64 {
@@ -1884,7 +1874,7 @@ fn TestStaticDictionaryItem(
     }
     {
         let cut: u64 = len.wrapping_sub(matchlen) as u64;
-        let transform_id: usize =
+        let transform_id =
             (cut << 2).wrapping_add(kCutoffTransforms >> cut.wrapping_mul(6) & 0x3f) as usize;
         backward = max_backward
             .wrapping_add(dist)
@@ -1928,7 +1918,7 @@ fn SearchInStaticDictionary<HasherType: AnyHasher>(
     i = 0usize;
     while i < if shallow { 1 } else { 2 } {
         {
-            let item: usize = dictionary_hash[key] as usize;
+            let item = dictionary_hash[key] as usize;
             xself.dict_num_lookups = xself.dict_num_lookups.wrapping_add(1);
             if item != 0usize {
                 let item_matches: i32 = TestStaticDictionaryItem(
