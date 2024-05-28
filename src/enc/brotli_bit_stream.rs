@@ -1,5 +1,4 @@
 #![allow(unknown_lints)]
-#![allow(dead_code)]
 #![allow(unused_macros)]
 
 use core::cmp::{max, min};
@@ -11,7 +10,6 @@ use super::super::dictionary::{
     kBrotliDictionary, kBrotliDictionaryOffsetsByLength, kBrotliDictionarySizeBitsByLength,
 };
 use super::super::transform::TransformDictionaryWord;
-use super::super::{alloc, core};
 use super::block_split::BlockSplit;
 use super::combined_alloc::BrotliAlloc;
 use super::command::{Command, GetCopyLengthCode, GetInsertLengthCode};
@@ -34,9 +32,9 @@ use super::input_pair::{InputPair, InputReference, InputReferenceMut};
 use super::interface::StaticCommand;
 use super::static_dict::kNumDistanceCacheEntries;
 use super::util::floatX;
-use super::{find_stride, interface, prior_eval, stride_eval};
-use crate::enc::backward_references::BrotliEncoderParams;
+use super::{find_stride, interface, prior_eval, stride_eval, BrotliEncoderParams};
 use crate::enc::combined_alloc::{alloc_default, alloc_or_default, allocate};
+use crate::interface::LiteralPredictionModeNibble;
 use crate::VERSION;
 
 pub struct PrefixCodeRange {
@@ -49,48 +47,10 @@ fn window_size_from_lgwin(lgwin: i32) -> usize {
     (1 << lgwin) - 16usize
 }
 
-fn context_type_str(context_type: ContextType) -> &'static str {
-    match context_type {
-        ContextType::CONTEXT_LSB6 => "lsb6",
-        ContextType::CONTEXT_MSB6 => "msb6",
-        ContextType::CONTEXT_UTF8 => "utf8",
-        ContextType::CONTEXT_SIGNED => "sign",
-    }
-}
-
-fn prediction_mode_str(
-    prediction_mode_nibble: interface::LiteralPredictionModeNibble,
-) -> &'static str {
-    match prediction_mode_nibble.prediction_mode() {
-        interface::LITERAL_PREDICTION_MODE_SIGN => "sign",
-        interface::LITERAL_PREDICTION_MODE_LSB6 => "lsb6",
-        interface::LITERAL_PREDICTION_MODE_MSB6 => "msb6",
-        interface::LITERAL_PREDICTION_MODE_UTF8 => "utf8",
-        _ => "unknown",
-    }
-}
-
-fn is_long_enough_to_be_random(len: usize, high_entropy_detection_quality: u8) -> bool {
-    match high_entropy_detection_quality {
-        0 => false,
-        1 => false,
-        2 => len >= 128,
-        3 => len >= 96,
-        4 => len >= 64,
-        5 => len >= 48,
-        6 => len >= 32,
-        7 => len >= 24,
-        8 => len >= 16,
-        9 => len >= 8,
-        10 => len >= 4,
-        11 => len >= 1,
-        _ => len >= 8,
-    }
-}
-const COMMAND_BUFFER_SIZE: usize = 4096;
-
 struct CommandQueue<'a, Alloc: BrotliAlloc + 'a> {
     mb: InputPair<'a>,
+    // TODO: delete unused fields
+    #[allow(dead_code)]
     mb_byte_offset: usize,
     mc: &'a mut Alloc,
     queue: <Alloc as Allocator<StaticCommand>>::AllocatedMemory,
@@ -100,9 +60,12 @@ struct CommandQueue<'a, Alloc: BrotliAlloc + 'a> {
     best_strides_per_block_type: <Alloc as Allocator<u8>>::AllocatedMemory,
     entropy_pyramid: find_stride::EntropyPyramid<Alloc>,
     context_map_entropy: ContextMapEntropy<'a, Alloc>,
+    #[allow(dead_code)]
     stride_detection_quality: u8,
+    #[allow(dead_code)]
     high_entropy_detection_quality: u8,
     block_type_literal: u8,
+    #[allow(dead_code)]
     best_stride_index: usize,
     overfull: bool,
 }
@@ -148,9 +111,6 @@ impl<'a, Alloc: BrotliAlloc> CommandQueue<'a, Alloc> {
         if self.full() {
             self.overfull = true;
         }
-    }
-    fn size(&self) -> usize {
-        self.loc
     }
     fn clear(&mut self) {
         self.loc = 0;
@@ -216,7 +176,7 @@ impl<'a, Alloc: BrotliAlloc> interface::CommandProcessor<'a> for CommandQueue<'a
 
 #[cfg(feature = "std")]
 fn warn_on_missing_free() {
-    let _err = ::std::io::stderr()
+    let _err = std::io::stderr()
         .write(b"Need to free entropy_tally_scratch before dropping CommandQueue\n");
 }
 #[cfg(not(feature = "std"))]
@@ -531,7 +491,7 @@ fn LogMetaBlock<'a, Alloc: BrotliAlloc, Cb>(
         params.literal_adaptation[1],
     ]);
 
-    prediction_mode.set_literal_prediction_mode(interface::LiteralPredictionModeNibble(
+    prediction_mode.set_literal_prediction_mode(LiteralPredictionModeNibble(
         context_type.unwrap_or(ContextType::CONTEXT_LSB6) as u8,
     ));
     let mut entropy_tally_scratch;
@@ -2434,8 +2394,6 @@ fn StoreDataWithHuffmanCodes(
         }
     }
 }
-
-fn nop<'a>(_data: &[interface::Command<InputReference>]) {}
 
 #[deprecated(note = "use store_meta_block_trivial instead")]
 pub fn BrotliStoreMetaBlockTrivial<Alloc: BrotliAlloc, Cb>(

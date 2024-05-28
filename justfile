@@ -33,7 +33,7 @@ fmt *ARGS:
 
 # Run Nightly cargo fmt, ordering imports by groups
 fmt2:
-    cargo +nightly fmt -- --config imports_granularity=Module,group_imports=StdExternalCrate
+    cargo +nightly fmt --all -- --config imports_granularity=Module,group_imports=StdExternalCrate
     cd c && cargo +nightly fmt -- --config imports_granularity=Module,group_imports=StdExternalCrate
 
 # Run cargo clippy

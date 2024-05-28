@@ -2,18 +2,15 @@
 #![allow(non_upper_case_globals)]
 #![allow(dead_code)]
 
-extern crate brotli_decompressor;
-extern crate core;
-
 use brotli::enc::threading::{Owned, SendAlloc};
-use brotli_decompressor::{SliceWrapper, SliceWrapperMut};
-
-use super::brotli::enc::{
+use brotli::enc::{
     compress_multi, compress_multi_no_threadpool, BrotliEncoderMaxCompressedSizeMulti,
     BrotliEncoderParams, UnionHasher,
 };
-use super::integration_tests::UnlimitedBuffer;
-use super::{new_brotli_heap_alloc, Rebox};
+use brotli_decompressor::{SliceWrapper, SliceWrapperMut};
+
+use crate::integration_tests::UnlimitedBuffer;
+use crate::{new_brotli_heap_alloc, Rebox};
 
 static RANDOM_THEN_UNICODE: &[u8] = include_bytes!("../../testdata/random_then_unicode");
 static ALICE: &[u8] = include_bytes!("../../testdata/alice29.txt");

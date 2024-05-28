@@ -1,4 +1,6 @@
-use alloc::{Allocator, SliceWrapperMut};
+#![cfg_attr(not(feature = "std"), allow(unused_imports))]
+
+pub use alloc::{AllocatedStackMemory, Allocator, SliceWrapper, SliceWrapperMut, StackAllocator};
 #[cfg(feature = "std")]
 use std::io;
 #[cfg(feature = "std")]

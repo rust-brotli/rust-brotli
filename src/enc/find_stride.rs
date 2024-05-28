@@ -1,12 +1,11 @@
+use alloc::{SliceWrapper, SliceWrapperMut};
 use core::cmp::{max, min};
 use core::ops::{Index, IndexMut, Range};
 
-use super::super::alloc;
-use super::super::alloc::{SliceWrapper, SliceWrapperMut};
 use super::input_pair::{InputPair, InputReference};
 use super::interface;
-use super::util::FastLog2;
 use crate::enc::combined_alloc::alloc_if;
+use crate::enc::util::FastLog2;
 // float32 doesn't have enough resolution for blocks of data more than 3.5 megs
 pub type floatY = f64;
 // the cost of storing a particular population of data including the approx
