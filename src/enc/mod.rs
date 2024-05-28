@@ -43,6 +43,10 @@ mod weights;
 pub mod worker_pool;
 pub mod writer;
 
+// FIXME: Remove this in 7.0
+#[deprecated(note = "Leaving this here to avoid breaking 6.0 compatibility.")]
+pub mod fast_log {}
+
 pub use alloc::{AllocatedStackMemory, Allocator, SliceWrapper, SliceWrapperMut, StackAllocator};
 #[cfg(feature = "std")]
 use std::io;
@@ -266,7 +270,7 @@ where
     {
         let s = &mut s_orig;
 
-        //BrotliEncoderSetParameter(s, BrotliEncoderParameter::BROTLI_PARAM_MODE, 0 as u32); // gen, text, font
+        //BrotliEncoderSetParameter(s, BrotliEncoderParameter::BROTLI_PARAM_MODE, 0); // gen, text, font
         //BrotliEncoderSetParameter(s,
         //                          BrotliEncoderParameter::BROTLI_PARAM_SIZE_HINT,
         //                          input.len() as u32);

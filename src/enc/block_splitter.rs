@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use core;
 use core::cmp::{max, min};
 #[cfg(feature = "simd")]
@@ -489,7 +487,7 @@ fn ClusterBlocks<
                 pairs.slice_mut(),
                 num_to_combine,
                 num_to_combine,
-                64usize,
+                64,
                 max_num_pairs,
                 scratch_space,
             );
@@ -575,7 +573,7 @@ fn ClusterBlocks<
         pairs.slice_mut(),
         num_clusters,
         num_blocks,
-        256usize,
+        256,
         max_num_pairs,
         scratch_space,
     );

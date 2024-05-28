@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use core;
 use core::cmp::{max, min};
 
@@ -887,8 +885,8 @@ pub fn BrotliBuildMetaBlockGreedyInternal<
     lit_blocks = if num_contexts == 1 {
         LitBlocks::plain(InitBlockSplitter::<HistogramLiteral, Alloc>(
             alloc,
-            256usize,
-            512usize,
+            256,
+            512,
             400.0,
             num_literals,
             &mut mb.literal_split,
@@ -898,9 +896,9 @@ pub fn BrotliBuildMetaBlockGreedyInternal<
     } else {
         LitBlocks::ctx(InitContextBlockSplitter::<Alloc>(
             alloc,
-            256usize,
+            256,
             num_contexts,
-            512usize,
+            512,
             400.0,
             num_literals,
             &mut mb.literal_split,
@@ -910,8 +908,8 @@ pub fn BrotliBuildMetaBlockGreedyInternal<
     };
     cmd_blocks = InitBlockSplitter::<HistogramCommand, Alloc>(
         alloc,
-        704usize,
-        1024usize,
+        704,
+        1024,
         500.0,
         n_commands,
         &mut mb.command_split,
@@ -920,8 +918,8 @@ pub fn BrotliBuildMetaBlockGreedyInternal<
     );
     dist_blocks = InitBlockSplitter::<HistogramDistance, Alloc>(
         alloc,
-        64usize,
-        512usize,
+        64,
+        512,
         100.0,
         n_commands,
         &mut mb.distance_split,
@@ -1088,14 +1086,14 @@ pub fn BrotliOptimizeHistograms<
     let mut good_for_rle: [u8; 704] = [0; 704];
     for i in 0usize..mb.literal_histograms_size {
         BrotliOptimizeHuffmanCountsForRle(
-            256usize,
+            256,
             mb.literal_histograms.slice_mut()[i].slice_mut(),
             &mut good_for_rle[..],
         );
     }
     for i in 0usize..mb.command_histograms_size {
         BrotliOptimizeHuffmanCountsForRle(
-            704usize,
+            704,
             mb.command_histograms.slice_mut()[i].slice_mut(),
             &mut good_for_rle[..],
         );
